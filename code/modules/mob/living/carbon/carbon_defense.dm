@@ -498,3 +498,167 @@
 		var/obj/item/bodypart/limb = _limb
 		if (limb.status != BODYPART_ORGANIC)
 			. += (limb.brute_dam * limb.body_damage_coeff) + (limb.burn_dam * limb.body_damage_coeff)
+
+/mob/living/carbon/proc/is_shove_knockdown_blocked()
+	return FALSE
+
+/mob/living/carbon/proc/clear_shove_slowdown()
+	remove_movespeed_modifier(/datum/movespeed_modifier/shove)
+
+/mob/living/carbon/proc/strain_bone(mob/living/carbon/user, obj/item/bodypart/limb)
+	if(!user || !limb)
+		return
+
+	user.visible_message("<span class='danger'>[user] begins twisting and straining [src]'s [limb.name]!</span>", "<span class='notice'>You begin twisting and straining [src]'s [limb.name]...</span>", ignored_mobs=src)
+	to_chat(src, "<span class='userdanger'>[user] begins twisting and straining your [limb.name]!</span>")
+	var/time = 1 SECONDS
+
+	if(!do_after(user, time, target=src))
+		return
+
+	if(prob(65))
+		user.visible_message("<span class='danger'>[user] unseats [src]'s [limb.name] with a sickening crack!</span>", "<span class='danger'>You unseat [src]'s [limb.name] with a sickening crack!</span>", ignored_mobs=src)
+		to_chat(src, "<span class='userdanger'>[user] unseats your [limb.name] with a sickening crack!</span>")
+		emote("scream")
+		limb.receive_damage(brute=10, wound_bonus=30)
+	else
+		user.visible_message("<span class='danger'>[user] wrenches [src]'s [limb.name] around painfully!</span>", "<span class='danger'>You wrench [src]'s [limb.name] around painfully!</span>", ignored_mobs=src)
+		to_chat(src, "<span class='userdanger'>[user] wrenches your [limb.name] around painfully!</span>")
+		limb.receive_damage(brute=5, wound_bonus=CANT_WOUND)
+
+/mob/living/carbon/proc/shoved(mob/living/carbon/human/user)
+	var/turf/target_oldturf = loc
+	var/shove_dir = get_dir(user.loc, target_oldturf)
+	var/turf/target_shove_turf = get_step(loc, shove_dir)
+
+	var/atom/movable/collateral
+
+	var/shove_blocked = FALSE //Used to check if a shove is blocked so that if it is knockdown logic can be applied
+
+	//Thank you based whoneedsspace
+	collateral = locate(/mob/living/carbon) in target_shove_turf.contents
+	if(collateral)
+		shove_blocked = TRUE
+	else
+		Move(target_shove_turf, shove_dir)
+		if(get_turf(src) == target_oldturf)
+			collateral = (locate(/obj/structure/table) in target_shove_turf.contents) || (locate(/obj/machinery/disposal/bin) in target_shove_turf.contents)
+			shove_blocked = TRUE
+
+	if(IsKnockdown() && !IsParalyzed())
+		Paralyze(SHOVE_CHAIN_PARALYZE)
+		visible_message("<span class='danger'>[user.name] kicks [src] onto [p_their()] side!</span>",
+						"<span class='userdanger'>You're kicked onto your side by [user.name]!</span>", "<span class='hear'>You hear aggressive shuffling followed by a loud thud!</span>", COMBAT_MESSAGE_RANGE, user)
+		to_chat(user, "<span class='danger'>You kick [src] onto [p_their()] side!</span>")
+		addtimer(CALLBACK(src, /mob/living/proc/SetKnockdown, 0), SHOVE_CHAIN_PARALYZE)
+		log_combat(user, src, "kicks", "onto their side (paralyzing)")
+
+	if(shove_blocked && !is_shove_knockdown_blocked() && !buckled)
+		handle_blocked_shove(user, collateral, target_oldturf, shove_dir, target_shove_turf)
+		return
+
+	visible_message("<span class='danger'>[user.name] shoves [src]!</span>",
+					"<span class='userdanger'>You're shoved by [user.name]!</span>", "<span class='hear'>You hear aggressive shuffling!</span>", COMBAT_MESSAGE_RANGE, user)
+	to_chat(user, "<span class='danger'>You shove [src]!</span>")
+	var/target_held_item = get_active_held_item()
+	var/knocked_item = FALSE
+	if(!is_type_in_typecache(target_held_item, GLOB.shove_disarming_types))
+		target_held_item = null
+	if(!has_movespeed_modifier(/datum/movespeed_modifier/shove))
+		add_movespeed_modifier(/datum/movespeed_modifier/shove)
+		if(target_held_item)
+			visible_message("<span class='danger'>[src]'s grip on \the [target_held_item] loosens!</span>",
+				"<span class='warning'>Your grip on \the [target_held_item] loosens!</span>", null, COMBAT_MESSAGE_RANGE)
+		addtimer(CALLBACK(src, /mob/living/carbon/proc/clear_shove_slowdown), SHOVE_SLOWDOWN_LENGTH)
+	else if(target_held_item)
+		dropItemToGround(target_held_item)
+		knocked_item = TRUE
+		visible_message("<span class='danger'>[src] drops \the [target_held_item]!</span>",
+			"<span class='warning'>You drop \the [target_held_item]!</span>", null, COMBAT_MESSAGE_RANGE)
+	var/append_message = ""
+	if(target_held_item)
+		if(knocked_item)
+			append_message = "causing [p_them()] to drop [target_held_item]"
+		else
+			append_message = "loosening [p_their()] grip on [target_held_item]"
+	log_combat(user, src, "shoved", append_message)
+
+/mob/living/carbon/proc/handle_blocked_shove(mob/living/carbon/human/user, atom/movable/collateral, var/turf/target_oldturf, var/shove_dir, var/turf/target_shove_turf)
+	var/directional_blocked = FALSE
+	if(shove_dir in GLOB.cardinals) //Directional checks to make sure that we're not shoving through a windoor or something like that
+		var/target_turf = get_turf(src)
+		for(var/obj/O in target_turf)
+			if(O.flags_1 & ON_BORDER_1 && O.dir == shove_dir && O.density)
+				directional_blocked = TRUE
+				break
+		if(target_turf != target_shove_turf) //Make sure that we don't run the exact same check twice on the same tile
+			for(var/obj/O in target_shove_turf)
+				if(O.flags_1 & ON_BORDER_1 && O.dir == turn(shove_dir, 180) && O.density)
+					directional_blocked = TRUE
+					break
+
+	testing("dir block [directional_blocked]")
+	if(!collateral || directional_blocked)
+		Knockdown(SHOVE_KNOCKDOWN_SOLID)
+		visible_message("<span class='danger'>[user.name] shoves [src], knocking [p_them()] down!</span>",
+						"<span class='userdanger'>You're knocked down from a shove by [user.name]!</span>", "<span class='hear'>You hear aggressive shuffling followed by a loud thud!</span>", COMBAT_MESSAGE_RANGE, user)
+		to_chat(user, "<span class='danger'>You shove [src], knocking [p_them()] down!</span>")
+		log_combat(user, src, "shoved", "knocking them down")
+		return
+
+
+	if(istype(collateral, /obj/structure/table))
+		Knockdown(SHOVE_KNOCKDOWN_TABLE)
+		visible_message("<span class='danger'>[user.name] shoves [src] onto \the [collateral]!</span>",
+						"<span class='userdanger'>You're shoved onto \the [collateral] by [user.name]!</span>", "<span class='hear'>You hear aggressive shuffling followed by a loud thud!</span>", COMBAT_MESSAGE_RANGE, user)
+		to_chat(user, "<span class='danger'>You shove [src] onto \the [collateral]!</span>")
+		throw_at(collateral, 1, 1, null, FALSE) //1 speed throws with no spin are basically just forcemoves with a hard collision check
+		log_combat(user, src, "shoved", "onto [collateral] (table)")
+		return
+
+	else if(iscarbon(collateral))
+		Knockdown(SHOVE_KNOCKDOWN_HUMAN)
+		var/mob/living/carbon/collateral_carbon = collateral
+		collateral_carbon.Knockdown(SHOVE_KNOCKDOWN_COLLATERAL)
+		visible_message("<span class='danger'>[user.name] shoves [src] into [collateral]!</span>",
+			"<span class='userdanger'>You're shoved into [collateral] by [user.name]!</span>", "<span class='hear'>You hear aggressive shuffling followed by a loud thud!</span>", COMBAT_MESSAGE_RANGE, user)
+		to_chat(user, "<span class='danger'>You shove [src] into [collateral]!</span>")
+		log_combat(user, src, "shoved", "into [collateral]")
+		return
+
+	else if(istype(collateral, /obj/machinery/disposal/bin))
+		Knockdown(SHOVE_KNOCKDOWN_SOLID)
+		forceMove(collateral)
+		visible_message("<span class='danger'>[user.name] shoves [src] into \the [collateral]!</span>",
+						"<span class='userdanger'>You're shoved into \the [collateral] by [src]!</span>", "<span class='hear'>You hear aggressive shuffling followed by a loud thud!</span>", COMBAT_MESSAGE_RANGE, user)
+		to_chat(user, "<span class='danger'>You shove [src] into \the [collateral]!</span>")
+		log_combat(user, src, "shoved", "into [collateral] (disposal bin)")
+		return
+
+/mob/living/carbon/proc/try_snap_neck(mob/living/carbon/user, streak_bonus = 0)
+	var/obj/item/bodypart/our_head = get_bodypart(BODY_ZONE_HEAD)
+	if(!user || !our_head)
+		return
+
+	user.visible_message("<span class='danger'>[user] begins twisting and straining [src]'s neck!</span>", "<span class='notice'>You begin twisting and straining [src]'s neck...</span>", ignored_mobs=src)
+	to_chat(src, "<span class='userdanger'>[user] begins twisting and straining your neck!</span>")
+	var/time = 0.35 SECONDS
+
+	if(!do_after(user, time, target=src, progress = FALSE))
+		return
+	playsound(src, 'sound/effects/wounds/grunt.ogg', 80, FALSE, -3)
+
+	if(prob(5 + streak_bonus))
+		user.visible_message("<span class='danger'>[user] snaps [src]'s neck with a nauseating splintering sound! Fuck!</span>", "<span class='danger'>You snap [src]'s neck with a nauseating splintering sound!</span>", ignored_mobs=src)
+		to_chat(src, "<span class='userdanger'>[user] snaps your neck with a sickening crack!</span>")
+		emote("scream")
+		var/datum/wound/neck/snappies = new
+		snappies.apply_wound(our_head)
+		playsound(src, 'sound/effects/wounds/crack2.ogg', 100, FALSE, -3)
+		playsound(src, 'sound/effects/wounds/crack2.ogg', 100, FALSE, -3)
+		playsound(src, 'sound/effects/wounds/crack2.ogg', 100, FALSE, -3)
+	else
+		user.visible_message("<span class='danger'>[user] wrenches [src]'s neck around painfully!</span>", "<span class='danger'>You wrench [src]'s neck around painfully!</span>", ignored_mobs=src)
+		to_chat(src, "<span class='userdanger'>[user] wrenches your neck around painfully!</span>")
+		our_head.receive_damage(brute=1, wound_bonus=CANT_WOUND)
+		try_snap_neck(user, streak_bonus + 0.75)

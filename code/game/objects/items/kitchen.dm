@@ -68,7 +68,7 @@
 /obj/item/kitchen/fork/plastic/afterattack(atom/target, mob/user)
 	.=..()
 	if(prob(break_chance))
-		user.visible_message("<span class='danger'>[user]'s fork snaps into tiny pieces in their hand.</span>")
+		user.visible_message("<span class='danger'>[user]'s fork snaps into tiny pieces in [user.p_their()] hand.</span>")
 		qdel(src)
 
 /obj/item/kitchen/knife
@@ -171,6 +171,8 @@
 	attack_verb = list("cleaved", "slashed", "stabbed", "sliced", "tore", "lacerated", "ripped", "diced", "cut")
 	w_class = WEIGHT_CLASS_NORMAL
 	custom_price = 600
+	wound_bonus = 0
+	bare_wound_bonus = 15
 
 /obj/item/kitchen/knife/hunting
 	name = "hunting knife"

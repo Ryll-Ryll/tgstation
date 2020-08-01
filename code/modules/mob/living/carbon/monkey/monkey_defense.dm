@@ -32,11 +32,11 @@
 		return
 
 	switch(M.a_intent)
-		if("help")
+		if(INTENT_HELP)
 			help_shake_act(M)
-		if("grab")
+		if(INTENT_GRAB)
 			grabbedby(M)
-		if("harm")
+		if(INTENT_HARM)
 			M.do_attack_animation(src, ATTACK_EFFECT_PUNCH)
 			if (prob(75))
 				visible_message("<span class='danger'>[M] punches [name]!</span>", \
@@ -63,21 +63,25 @@
 				visible_message("<span class='danger'>[M]'s punch misses [name]!</span>", \
 								"<span class='danger'>You avoid [M]'s punch!</span>", "<span class='hear'>You hear a swoosh!</span>", COMBAT_MESSAGE_RANGE, M)
 				to_chat(M, "<span class='warning'>Your punch misses [name]!</span>")
-		if("disarm")
-			if(stat < UNCONSCIOUS)
+		if(INTENT_DISARM)
+			return
+			/*
+			if(!INTERACTING_WITH(user, target) && user.pulling == target && user.grab_state >= GRAB_AGGRESSIVE && user.a_intent == INTENT_DISARM)
+				var/obj/item/bodypart/limb = target.get_bodypart(user.zone_selected)
+				if(limb.wounds && (locate(/datum/wound/blunt) in limb.wounds))
+					testing("already bone wound")
+				else
+					var/datum/wound/blunt/moderate/can_we_dislocate = new
+					if((limb.body_zone in can_we_dislocate.viable_zones))
+						target.strain_bone(user, limb)
+						return
+					else
+						testing("not viable zone")
+			else if(stat < UNCONSCIOUS)
 				M.do_attack_animation(src, ATTACK_EFFECT_DISARM)
-				if (prob(25))
-					Paralyze(40)
-					playsound(loc, 'sound/weapons/thudswoosh.ogg', 50, TRUE, -1)
-					log_combat(M, src, "pushed")
-					visible_message("<span class='danger'>[M] pushes [src] down!</span>", \
-									"<span class='userdanger'>[M] pushes you down!</span>", "<span class='hear'>You hear aggressive shuffling followed by a loud thud!</span>", null, M)
-					to_chat(M, "<span class='danger'>You push [src] down!</span>")
-				else if(dropItemToGround(get_active_held_item()))
-					playsound(src, 'sound/weapons/thudswoosh.ogg', 50, TRUE, -1)
-					visible_message("<span class='danger'>[M] disarms [src]!</span>", \
-									"<span class='userdanger'>[M] disarms you!</span>", "<span class='hear'>You hear aggressive shuffling!</span>", COMBAT_MESSAGE_RANGE, M)
-					to_chat(M, "<span class='danger'>You disarm [src]!</span>")
+				shoved(M)
+			//else
+			*/
 
 /mob/living/carbon/monkey/attack_alien(mob/living/carbon/alien/humanoid/M)
 	if(..()) //if harm or disarm intent.
