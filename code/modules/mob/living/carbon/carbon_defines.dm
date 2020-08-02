@@ -77,6 +77,8 @@
 	var/list/all_wounds
 	/// All of the scars a carbon has afflicted throughout their limbs
 	var/list/all_scars
+	/// What grunt we make when we're having our neck snapped
+	var/grunt_sound = 'sound/effects/wounds/grunt_human.ogg'
 
 	/// Maximum number of skillchips slots we can support before they stop working
 	var/max_skillchip_slots = 2

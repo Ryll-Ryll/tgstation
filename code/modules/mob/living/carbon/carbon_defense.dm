@@ -505,27 +505,6 @@
 /mob/living/carbon/proc/clear_shove_slowdown()
 	remove_movespeed_modifier(/datum/movespeed_modifier/shove)
 
-/mob/living/carbon/proc/strain_bone(mob/living/carbon/user, obj/item/bodypart/limb)
-	if(!user || !limb)
-		return
-
-	user.visible_message("<span class='danger'>[user] begins twisting and straining [src]'s [limb.name]!</span>", "<span class='notice'>You begin twisting and straining [src]'s [limb.name]...</span>", ignored_mobs=src)
-	to_chat(src, "<span class='userdanger'>[user] begins twisting and straining your [limb.name]!</span>")
-	var/time = 1 SECONDS
-
-	if(!do_after(user, time, target=src))
-		return
-
-	if(prob(65))
-		user.visible_message("<span class='danger'>[user] unseats [src]'s [limb.name] with a sickening crack!</span>", "<span class='danger'>You unseat [src]'s [limb.name] with a sickening crack!</span>", ignored_mobs=src)
-		to_chat(src, "<span class='userdanger'>[user] unseats your [limb.name] with a sickening crack!</span>")
-		emote("scream")
-		limb.receive_damage(brute=10, wound_bonus=30)
-	else
-		user.visible_message("<span class='danger'>[user] wrenches [src]'s [limb.name] around painfully!</span>", "<span class='danger'>You wrench [src]'s [limb.name] around painfully!</span>", ignored_mobs=src)
-		to_chat(src, "<span class='userdanger'>[user] wrenches your [limb.name] around painfully!</span>")
-		limb.receive_damage(brute=5, wound_bonus=CANT_WOUND)
-
 /mob/living/carbon/proc/shoved(mob/living/carbon/human/user)
 	var/turf/target_oldturf = loc
 	var/shove_dir = get_dir(user.loc, target_oldturf)
@@ -597,7 +576,6 @@
 					directional_blocked = TRUE
 					break
 
-	testing("dir block [directional_blocked]")
 	if(!collateral || directional_blocked)
 		Knockdown(SHOVE_KNOCKDOWN_SOLID)
 		visible_message("<span class='danger'>[user.name] shoves [src], knocking [p_them()] down!</span>",
@@ -635,36 +613,93 @@
 		log_combat(user, src, "shoved", "into [collateral] (disposal bin)")
 		return
 
-/mob/living/carbon/proc/try_snap_neck(mob/living/carbon/user, streak_bonus = 0)
-	var/obj/item/bodypart/our_head = get_bodypart(BODY_ZONE_HEAD)
-	if(!user || !our_head)
+/**
+  *
+  *
+  *
+  *
+  * Arguments:
+  * *
+  */
+/mob/living/carbon/proc/try_dislocating_bone(mob/living/carbon/user, obj/item/bodypart/limb, streak_bonus = 0)
+	if(!user || !limb)
+		return
+
+	user.visible_message("<span class='danger'>[user] begins twisting and straining [src]'s [limb.name]!</span>", "<span class='notice'>You begin twisting and straining [src]'s [limb.name]...</span>", ignored_mobs=src)
+	to_chat(src, "<span class='userdanger'>[user] begins twisting and straining your [limb.name]!</span>")
+	var/user_stamloss = user.getStaminaLoss()
+	var/time = DISLOCATE_TIME_BASE
+	user.stam_regen_start_time = world.time + STAMINA_REGEN_BLOCK_TIME
+
+	if(user_stamloss < DISLOCATE_STAM_MAX)
+		user.adjustStaminaLoss(DISLOCATE_STAM_COST)
+
+	if(!do_after(user, time, target=src))
+		return
+
+	if(prob(DISLOCATE_CHANCE_BASE + streak_bonus))
+		user.visible_message("<span class='danger'>[user] unseats [src]'s [limb.name] with a sickening crack!</span>", "<span class='danger'>You unseat [src]'s [limb.name] with a sickening crack!</span>", ignored_mobs=src)
+		to_chat(src, "<span class='userdanger'>[user] unseats your [limb.name] with a sickening crack!</span>")
+		emote("scream")
+		limb.receive_damage(brute=10, wound_bonus=30)
+	else
+		user.visible_message("<span class='danger'>[user] wrenches [src]'s [limb.name] around painfully!</span>", "<span class='danger'>You wrench [src]'s [limb.name] around painfully!</span>", ignored_mobs=src)
+		to_chat(src, "<span class='userdanger'>[user] wrenches your [limb.name] around painfully!</span>")
+		limb.receive_damage(brute=5, wound_bonus=CANT_WOUND)
+		try_dislocating_bone(user, limb, streak_bonus + DISLOCATE_STREAK_BONUS)
+/**
+  * try_snap_neck() is used when some carbon mob (read: human) has us in a kill grip and is actively trying to snap our neck. That's no fun for us!!
+  *
+  *
+  *
+  *
+  *
+  * Arguments:
+  * * user- The sonofabitch trying to break our neck
+  * * streak_bonus-
+  * * added_delay- After each successful snap upgrade, we take a second to get our bearings and readjust our grip or whatever
+  */
+/mob/living/carbon/proc/try_snap_neck(mob/living/carbon/user, streak_bonus = 0, added_delay = 0)
+	var/obj/item/bodypart/head/our_head = get_bodypart(BODY_ZONE_HEAD)
+	if(!user || !istype(our_head))
 		return
 
 	var/datum/wound/neck/existing_neck = LAZYLEN(all_wounds) ? (locate(/datum/wound/neck) in all_wounds) : null
-	if(existing_neck?.severity == WOUND_SEVERITY_CRITICAL)
+	if(existing_neck?.severity == WOUND_SEVERITY_CRITICAL) // neck is already max broked
 		return
 
 	user.visible_message("<span class='danger'>[user] begins twisting and straining [src]'s neck!</span>", "<span class='notice'>You begin twisting and straining [src]'s neck...</span>", ignored_mobs=src)
 	to_chat(src, "<span class='userdanger'>[user] begins twisting and straining your neck!</span>")
-	var/time = 0.35 SECONDS
+
+	var/user_stamloss = user.getStaminaLoss()
+	var/time = NECK_SNAP_TIME_BASE + (user_stamloss * NECK_SNAP_TIME_STAM_COEFF) + added_delay
+	user.stam_regen_start_time = world.time + STAMINA_REGEN_BLOCK_TIME
+
+	if(user_stamloss < NECK_SNAP_STAM_MAX)
+		user.adjustStaminaLoss(NECK_SNAP_STAM_COST)
 
 	if(!do_after(user, time, target=src, progress = FALSE))
 		return
-	playsound(src, 'sound/effects/wounds/grunt.ogg', 80, FALSE, -3)
 
-	if(prob(5 + streak_bonus))
-		user.visible_message("<span class='danger'>[user] snaps [src]'s neck with a nauseating splintering sound! Fuck!</span>", "<span class='danger'>You snap [src]'s neck with a nauseating splintering sound!</span>", ignored_mobs=src)
-		to_chat(src, "<span class='userdanger'>[user] snaps your neck with a sickening crack!</span>")
+	if(stat != DEAD) // you can still grunt from getting choked while unconscious
+		playsound(src, grunt_sound, 80, TRUE, -3)
+
+	// snapped
+	if(prob(1 + streak_bonus))
 		emote("scream")
 		if(existing_neck)
+			if(existing_neck.severity == WOUND_SEVERITY_SEVERE)
+				user.visible_message("<span class='danger'>[user] snaps [src]'s neck with a nauseating splintering sound! Fuck!</span>", "<span class='danger'>You snap [src]'s neck with a nauseating splintering sound!</span>", ignored_mobs=src)
+				to_chat(src, "<span class='userdanger'>[user] snaps your neck with a sickening crack, killing you instantly!</span>")
 			existing_neck.promote()
 		else
 			var/datum/wound/neck/moderate/snappies = new
 			snappies.apply_wound(our_head)
-		try_snap_neck(user, 0)
+		try_snap_neck(user, 0, 1 SECONDS)
+		return
 
-	else
-		user.visible_message("<span class='danger'>[user] wrenches [src]'s neck around painfully!</span>", "<span class='danger'>You wrench [src]'s neck around painfully!</span>", ignored_mobs=src)
-		to_chat(src, "<span class='userdanger'>[user] wrenches your neck around painfully!</span>")
-		our_head.receive_damage(brute=1, wound_bonus=CANT_WOUND)
-		try_snap_neck(user, streak_bonus + 0.75)
+	// didn't snap
+	user.visible_message("<span class='danger'>[user] wrenches [src]'s neck around painfully!</span>", "<span class='danger'>You wrench [src]'s neck around painfully!</span>", ignored_mobs=src)
+	to_chat(src, "<span class='userdanger'>[user] wrenches your neck around painfully!</span>")
+	our_head.receive_damage(brute=1, wound_bonus=CANT_WOUND)
+	try_snap_neck(user, streak_bonus + (NECK_SNAP_STREAK_BONUS * our_head.neck_weakness_mult))

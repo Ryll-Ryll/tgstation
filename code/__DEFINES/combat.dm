@@ -252,3 +252,28 @@ GLOBAL_LIST_INIT(shove_disarming_types, typecacheof(list(
 #define BULLET_ACT_TURF				"TURF"		//It hit us but it should hit something on the same turf too. Usually used for turfs.
 
 #define NICE_SHOT_RICOCHET_BONUS	10			//if the shooter has the NICE_SHOT trait and they fire a ricocheting projectile, add this to the ricochet chance and auto aim angle
+
+
+///How long it takes to try dislocating an undislocated bone by default
+#define DISLOCATE_TIME_BASE			1.5 SECONDS
+///How likely we are to dislocate a limb by default
+#define DISLOCATE_CHANCE_BASE		20
+///We start at DISLOCATE_CHANCE_BASE chance for each wrench to upgrade, and increase it by this each repeat. This resets on each new snap upgrade
+#define DISLOCATE_STREAK_BONUS		5
+///How much staminaloss we use for each choke-out in a neck snap, until we hit NECK_SNAP_STAMINA_MAX
+#define DISLOCATE_STAM_COST			8
+///Once we have this much stamina lost, we start phoning it in
+#define DISLOCATE_STAM_MAX			40
+
+///How much time it takes for each choke-out in a neck snap, much more rapid but lower chances than dislocating
+#define NECK_SNAP_TIME_BASE			0.14 SECONDS
+///We start at a 1% chance for each snap to upgrade, and increase it by this each repeat. This resets on each new snap upgrade. Modified by [/obj/item/bodypart/head/var/neck_weakness_mult]
+#define NECK_SNAP_STREAK_BONUS		0.45
+///Each choke-out in a neck snap takes (stamloss * this) deciseconds longer per choke, so you get slower as you get more tired (75 * 0.05 = 3.75ds, so about half speed at full stamloss)
+#define NECK_SNAP_TIME_STAM_COEFF	0.05
+///How much staminaloss we use for each choke-out in a neck snap, until we hit NECK_SNAP_STAMINA_MAX
+#define NECK_SNAP_STAM_COST			3
+///Once we have this much stamina lost, we start phoning it in
+#define NECK_SNAP_STAM_MAX			75
+
+

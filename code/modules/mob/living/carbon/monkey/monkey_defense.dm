@@ -64,7 +64,26 @@
 								"<span class='danger'>You avoid [M]'s punch!</span>", "<span class='hear'>You hear a swoosh!</span>", COMBAT_MESSAGE_RANGE, M)
 				to_chat(M, "<span class='warning'>Your punch misses [name]!</span>")
 		if(INTENT_DISARM)
-			return
+			if(M.pulling == src && M.grab_state >= GRAB_AGGRESSIVE && !INTERACTING_WITH(M, src))
+				var/obj/item/bodypart/limb = src.get_bodypart(M.zone_selected)
+				if(!limb) // obviously to dislocate a bone, one must have bones
+					return
+
+				// first check if we're trying to snap their neck
+				if(limb.body_zone == BODY_ZONE_HEAD && M.grab_state == GRAB_KILL)
+					INVOKE_ASYNC(src, .proc/try_snap_neck, M)
+					return TRUE
+
+				// then see if we're trying to dislocate an unwounded limb
+				if(!LAZYLEN(limb.wounds) || !(locate(/datum/wound/blunt) in limb.wounds))
+					var/datum/wound/blunt/moderate/can_we_dislocate = new // this is a list, so we have to actually instantiate one to check
+					if((limb.body_zone in can_we_dislocate.viable_zones))
+						INVOKE_ASYNC(src, .proc/try_dislocating_bone, M, limb)
+						return TRUE
+
+			else
+				M.do_attack_animation(src, ATTACK_EFFECT_DISARM)
+				shoved(M)
 			/*
 			if(!INTERACTING_WITH(user, target) && user.pulling == target && user.grab_state >= GRAB_AGGRESSIVE && user.a_intent == INTENT_DISARM)
 				var/obj/item/bodypart/limb = target.get_bodypart(user.zone_selected)
@@ -73,7 +92,7 @@
 				else
 					var/datum/wound/blunt/moderate/can_we_dislocate = new
 					if((limb.body_zone in can_we_dislocate.viable_zones))
-						target.strain_bone(user, limb)
+						target.try_dislocating_bone(user, limb)
 						return
 					else
 						testing("not viable zone")
@@ -82,6 +101,7 @@
 				shoved(M)
 			//else
 			*/
+
 
 /mob/living/carbon/monkey/attack_alien(mob/living/carbon/alien/humanoid/M)
 	if(..()) //if harm or disarm intent.

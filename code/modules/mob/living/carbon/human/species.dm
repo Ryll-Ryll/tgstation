@@ -1403,21 +1403,9 @@ GLOBAL_LIST_EMPTY(roundstart_races)
 	if(user == target)
 		return FALSE
 
-	var/obj/item/bodypart/limb = target.get_bodypart(user.zone_selected)
-	if((limb && target.dna.species.species_traits & HAS_BONE) && !INTERACTING_WITH(user, target) && user.pulling == target && user.grab_state >= GRAB_AGGRESSIVE)
-		if(limb.body_zone == BODY_ZONE_HEAD && user.grab_state == GRAB_KILL)
-			target.try_snap_neck(user)
-			return
-
-		if(limb.wounds && (locate(/datum/wound/blunt) in limb.wounds))
-			testing("already bone wound")
-		else
-			var/datum/wound/blunt/moderate/can_we_dislocate = new
-			if((limb.body_zone in can_we_dislocate.viable_zones))
-				target.strain_bone(user, limb)
-				return
-			else
-				testing("not viable zone")
+	if(user.pulling == target && user.grab_state >= GRAB_AGGRESSIVE && !INTERACTING_WITH(user, target))
+		if(try_wrenching_bones(user, target))
+			return FALSE
 
 	if(user.loc == target.loc)
 		return FALSE
@@ -1431,6 +1419,31 @@ GLOBAL_LIST_EMPTY(roundstart_races)
 
 	target.shoved(user)
 
+/**
+  *
+  *
+  *
+  *
+  * Arguments:
+  * *
+  */
+/datum/species/proc/try_wrenching_bones(mob/living/carbon/human/user, mob/living/carbon/human/target)
+	var/obj/item/bodypart/limb = target.get_bodypart(user.zone_selected)
+
+	if(!limb || !(target.dna.species.species_traits & HAS_BONE)) // obviously to dislocate a bone, one must have bones
+		return
+
+	// first check if we're trying to snap their neck
+	if(limb.body_zone == BODY_ZONE_HEAD && user.grab_state == GRAB_KILL)
+		INVOKE_ASYNC(target, /mob/living/carbon/proc/try_snap_neck, user)
+		return TRUE
+
+	// then see if we're trying to dislocate an unwounded limb
+	if(!LAZYLEN(limb.wounds) || !(locate(/datum/wound/blunt) in limb.wounds))
+		var/datum/wound/blunt/moderate/can_we_dislocate = new // this is a list, so we have to actually instantiate one to check
+		if((limb.body_zone in can_we_dislocate.viable_zones))
+			INVOKE_ASYNC(target, /mob/living/carbon/proc/try_dislocating_bone, user, limb)
+			return TRUE
 
 /datum/species/proc/spec_hitby(atom/movable/AM, mob/living/carbon/human/H)
 	return
