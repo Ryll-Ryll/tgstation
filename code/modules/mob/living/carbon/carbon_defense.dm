@@ -640,6 +640,10 @@
 	if(!user || !our_head)
 		return
 
+	var/datum/wound/neck/existing_neck = LAZYLEN(all_wounds) ? (locate(/datum/wound/neck) in all_wounds) : null
+	if(existing_neck?.severity == WOUND_SEVERITY_CRITICAL)
+		return
+
 	user.visible_message("<span class='danger'>[user] begins twisting and straining [src]'s neck!</span>", "<span class='notice'>You begin twisting and straining [src]'s neck...</span>", ignored_mobs=src)
 	to_chat(src, "<span class='userdanger'>[user] begins twisting and straining your neck!</span>")
 	var/time = 0.35 SECONDS
@@ -652,11 +656,13 @@
 		user.visible_message("<span class='danger'>[user] snaps [src]'s neck with a nauseating splintering sound! Fuck!</span>", "<span class='danger'>You snap [src]'s neck with a nauseating splintering sound!</span>", ignored_mobs=src)
 		to_chat(src, "<span class='userdanger'>[user] snaps your neck with a sickening crack!</span>")
 		emote("scream")
-		var/datum/wound/neck/snappies = new
-		snappies.apply_wound(our_head)
-		playsound(src, 'sound/effects/wounds/crack2.ogg', 100, FALSE, -3)
-		playsound(src, 'sound/effects/wounds/crack2.ogg', 100, FALSE, -3)
-		playsound(src, 'sound/effects/wounds/crack2.ogg', 100, FALSE, -3)
+		if(existing_neck)
+			existing_neck.promote()
+		else
+			var/datum/wound/neck/moderate/snappies = new
+			snappies.apply_wound(our_head)
+		try_snap_neck(user, 0)
+
 	else
 		user.visible_message("<span class='danger'>[user] wrenches [src]'s neck around painfully!</span>", "<span class='danger'>You wrench [src]'s neck around painfully!</span>", ignored_mobs=src)
 		to_chat(src, "<span class='userdanger'>[user] wrenches your neck around painfully!</span>")
