@@ -235,6 +235,10 @@
 	name = "X-01 multiphase energy gun power cell"
 	maxcharge = 1200
 
+/obj/item/stock_parts/cell/las_lmg
+	name = "TAC5 LaSAW power cell"
+	maxcharge = 3000
+
 /obj/item/stock_parts/cell/pulse //200 pulse shots
 	name = "pulse rifle power cell"
 	maxcharge = 40000

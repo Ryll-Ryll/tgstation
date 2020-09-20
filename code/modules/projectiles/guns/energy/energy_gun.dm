@@ -59,6 +59,22 @@
 	ammo_x_offset = 4
 	resistance_flags = INDESTRUCTIBLE | LAVA_PROOF | FIRE_PROOF | ACID_PROOF
 
+/obj/item/gun/energy/e_gun/lmg
+	name = "\improper TAC-5 LaSAW"
+	desc = "A massive laser gun fit for a fire support role."
+	cell_type = /obj/item/stock_parts/cell/las_lmg
+	icon_state = "pulse"
+	force = 10
+	w_class = WEIGHT_CLASS_HUGE
+	//ammo_type = list(/obj/item/ammo_casing/energy/disabler, /obj/item/ammo_casing/energy/laser)
+	ammo_type = list(/obj/item/ammo_casing/energy/laser/las_lmg)
+	resistance_flags = INDESTRUCTIBLE | LAVA_PROOF | FIRE_PROOF | ACID_PROOF
+	burst_size = 5
+	spread = 16
+	weapon_weight = WEAPON_HEAVY
+	allow_overwatch = TRUE
+	fire_delay = 1
+
 /obj/item/gun/energy/e_gun/dragnet
 	name = "\improper DRAGnet"
 	desc = "The \"Dynamic Rapid-Apprehension of the Guilty\" net is a revolution in law enforcement technology."

@@ -187,9 +187,13 @@ GLOBAL_LIST_INIT(shove_disarming_types, typecacheof(list(
 #define EMBED_POINTY_SUPERIOR list("embed_chance" = 100, "ignore_throwspeed_threshold" = TRUE)
 
 //Gun weapon weight
+/// You can fire one handed with no restrictions
 #define WEAPON_LIGHT 1
+/// Can fire one handed, but cannot be fired from an off-hand when dual wielding
 #define WEAPON_MEDIUM 2
+/// Requires two hands to fire
 #define WEAPON_HEAVY 3
+
 //Gun trigger guards
 #define TRIGGER_GUARD_ALLOW_ALL -1
 #define TRIGGER_GUARD_NONE 0
@@ -283,3 +287,12 @@ GLOBAL_LIST_INIT(shove_disarming_types, typecacheof(list(
 #define BULLET_ACT_TURF				"TURF"		//It hit us but it should hit something on the same turf too. Usually used for turfs.
 
 #define NICE_SHOT_RICOCHET_BONUS	10			//if the shooter has the NICE_SHOT trait and they fire a ricocheting projectile, add this to the ricochet chance and auto aim angle
+
+/// Fire on any visible movable atoms that enter your field of fire
+#define OVERWATCH_FIRE_ANYTHING		0
+/// Fire on any visible mobs that enter your field of fire
+#define OVERWATCH_FIRE_MOBS			1
+/// Fire on any visible carbons that enter your field of fire who are set to wanted, are brandishing an illegal weapon, or have their identity obscured
+#define OVERWATCH_FIRE_SECHUD	2
+/// Fire on any visible assistants that enter your field of fire
+#define OVERWATCH_FIRE_ASSISTANTS	3

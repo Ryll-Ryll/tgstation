@@ -20,6 +20,9 @@
 /obj/item/ammo_casing/energy/laser/hos
 	e_cost = 120
 
+/obj/item/ammo_casing/energy/laser/las_lmg
+	delay = 1
+
 /obj/item/ammo_casing/energy/laser/practice
 	projectile_type = /obj/projectile/beam/practice
 	select_name = "practice"

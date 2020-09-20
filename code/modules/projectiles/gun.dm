@@ -53,6 +53,7 @@
 	var/can_flashlight = FALSE //if a flashlight can be added or removed if it already has one.
 	var/obj/item/flashlight/seclite/gun_light
 	var/datum/action/item_action/toggle_gunlight/alight
+	var/datum/action/item_action/enter_overwatch/aoverwatch
 	var/gunlight_state = "flight"
 
 	var/can_bayonet = FALSE //if a bayonet can be added or removed if it already has one.
@@ -75,12 +76,16 @@
 	var/automatic = 0 //can gun use it, 0 is no, anything above 0 is the delay between clicks in ds
 	var/pb_knockback = 0
 
+	var/allow_overwatch = FALSE
+
 /obj/item/gun/Initialize()
 	. = ..()
 	if(pin)
 		pin = new pin(src)
 	if(gun_light)
 		alight = new(src)
+	if(allow_overwatch)
+		aoverwatch = new(src)
 	build_zooming()
 
 /obj/item/gun/Destroy()
@@ -533,6 +538,8 @@
 /obj/item/gun/ui_action_click(mob/user, actiontype)
 	if(istype(actiontype, alight))
 		toggle_gunlight()
+	else if(istype(actiontype, aoverwatch))
+		user.AddComponent(/datum/component/overwatch, src, mode=OVERWATCH_FIRE_MOBS)
 	else
 		..()
 

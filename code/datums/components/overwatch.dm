@@ -1,3 +1,4 @@
+
 ///This proc adjusts the cones width depending on the level.
 /datum/component/overwatch/proc/calculate_cone_shape(current_level)
 	var/end_taper_start = round(cone_levels * 0.8)
@@ -55,14 +56,14 @@
 			break
 	return turfs_to_return
 
-
+/datum/action/item_action/enter_overwatch
+	name = "Enter Overwatch"
+	desc = "Set up a field of fire where you're facing, and fire on the first valid target that enters your view there."
 
 /datum/component/overwatch
 	dupe_mode = COMPONENT_DUPE_UNIQUE
 
 	var/obj/item/gun/weapon
-
-	var/stage = 1
 
 	var/point_of_no_return = FALSE
 	var/list/watched_turfs
@@ -70,21 +71,25 @@
 	var/respect_density = FALSE
 	var/cone_levels = 5
 
-/datum/component/overwatch/Initialize(obj/item/gun/wep)
+	var/trigger_mode = OVERWATCH_FIRE_ASSISTANTS
+
+
+/datum/component/overwatch/Initialize(obj/item/gun/wep, mode = OVERWATCH_FIRE_ASSISTANTS)
 	if(!isliving(parent))
 		return COMPONENT_INCOMPATIBLE
 
 	var/mob/living/shooter = parent
-	//target = targ
 	weapon = wep
+	trigger_mode = mode
 	//RegisterSignal(targ, list(COMSIG_MOB_ATTACK_HAND, COMSIG_MOB_ITEM_ATTACK, COMSIG_MOVABLE_MOVED, COMSIG_MOB_FIRED_GUN), .proc/trigger_reaction)
 
-	//RegisterSignal(weapon, list(COMSIG_ITEM_DROPPED, COMSIG_ITEM_EQUIPPED), .proc/cancel)
+	RegisterSignal(weapon, list(COMSIG_ITEM_DROPPED, COMSIG_ITEM_EQUIPPED), .proc/cancel)
 
 
-	shooter.say("Overwatch, aye aye!")
+	var/list/lines = list("Overwatch, aye aye.", "On overwatch.", "I’ve got my eyes on.", "Scanning.")
+	shooter.say(pick(lines))
 	playsound(get_turf(shooter), 'sound/weapons/gun/general/chunkyrack.ogg')
-	//if(istype(weapon, /obj/item/gun/))
+
 	//shooter.visible_message("<span class='danger'>[shooter] aims [weapon] point blank at [target]!</span>", \
 	//	"<span class='danger'>You aim [weapon] point blank at [target]!</span>", target)
 	//to_chat(target, "<span class='userdanger'>[shooter] aims [weapon] point blank at you!</span>")
@@ -111,19 +116,55 @@
 
 /datum/component/overwatch/RegisterWithParent()
 	RegisterSignal(parent, COMSIG_MOVABLE_MOVED, .proc/check_cancel)
+	RegisterSignal(parent, COMSIG_MOB_APPLY_DAMGE, .proc/check_flinch)
 
+/datum/component/overwatch/UnregisterFromParent()
+	UnregisterSignal(parent, list(COMSIG_MOVABLE_MOVED, COMSIG_MOB_APPLY_DAMGE))
+	return ..()
+
+
+/datum/component/overwatch/proc/cancel()
+	SIGNAL_HANDLER
+	qdel(src)
 /datum/component/overwatch/proc/check_cancel(mob/living/shooter)
 	SIGNAL_HANDLER
 	qdel(src)
+/datum/component/overwatch/proc/check_flinch(attacker, damage, damagetype, def_zone)
+	SIGNAL_HANDLER
+	qdel(src)
 
-/datum/component/overwatch/proc/check_trigger(turf/entered_turf, atom/movable/AM, oldLoc)
+/datum/component/overwatch/proc/check_trigger(turf/entered_turf, atom/movable/potential_target, oldLoc)
 	SIGNAL_HANDLER
 
 	var/mob/living/shooter = parent
-	if(shooter == AM || !can_see(shooter, entered_turf)) // i guess check for invisibility too
+	if(potential_target.invisibility > shooter.see_invisible || shooter == potential_target || !can_see(shooter, entered_turf))
 		return FALSE
 
-	INVOKE_ASYNC(src, .proc/trigger_reaction, AM)
+	switch(trigger_mode)
+		if(OVERWATCH_FIRE_ANYTHING)
+
+		if(OVERWATCH_FIRE_MOBS)
+			if(!ismob(potential_target))
+				return
+
+		if(OVERWATCH_FIRE_SECHUD)
+			if(!iscarbon(potential_target))
+				return
+			var/mob/living/carbon/carbon_target = potential_target
+			var/check_flags = (JUDGE_RECORDCHECK | JUDGE_IDCHECK | JUDGE_WEAPONCHECK)
+			var/threatlevel = carbon_target.assess_threat(check_flags, weaponcheck=CALLBACK(src, .proc/check_for_weapons))
+			if(threatlevel < 4)
+				return
+
+		if(OVERWATCH_FIRE_ASSISTANTS)
+			if(!ishuman(potential_target))
+				return
+			var/mob/living/carbon/human/human_target = potential_target
+			var/obj/item/card/id/visible_id = human_target.wear_id?.GetID()
+			if(!((visible_id?.assignment == "Assistant") || (human_target.mind?.assigned_role == "Assistant")))
+				return
+
+	INVOKE_ASYNC(src, .proc/trigger_reaction, potential_target)
 
 /datum/component/overwatch/proc/trigger_reaction(atom/movable/target)
 	point_of_no_return = TRUE
@@ -131,5 +172,13 @@
 	if(weapon.check_botched(shooter))
 		return
 
-	var/fired = weapon.process_fire(target, shooter)
+	if(isliving(target))
+		var/mob/living/living_target = target
+		living_target.Immobilize(0.1 SECONDS) // slight immobilize
+	weapon.process_fire(target, shooter)
 	qdel(src)
+
+/datum/component/overwatch/proc/check_for_weapons(obj/item/slot_item)
+	if(slot_item && (slot_item.item_flags & NEEDS_PERMIT))
+		return TRUE
+	return FALSE
