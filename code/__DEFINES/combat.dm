@@ -289,6 +289,7 @@ GLOBAL_LIST_INIT(shove_disarming_types, typecacheof(list(
 
 #define NICE_SHOT_RICOCHET_BONUS	10			//if the shooter has the NICE_SHOT trait and they fire a ricocheting projectile, add this to the ricochet chance and auto aim angle
 
+// overwatch mode defines
 /// Fire on any visible movable atoms that enter your field of fire
 #define OVERWATCH_FIRE_ANYTHING		0
 /// Fire on any visible mobs that enter your field of fire
