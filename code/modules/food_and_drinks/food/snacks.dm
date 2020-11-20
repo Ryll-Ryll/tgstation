@@ -68,7 +68,7 @@ All foods are distributed among various categories. Use common sense.
 	return COMSIG_FRYING_HANDLED
 
 /obj/item/reagent_containers/food/snacks/add_initial_reagents()
-	if(tastes && tastes.len)
+	if(tastes?.len)
 		if(list_reagents)
 			for(var/rid in list_reagents)
 				var/amount = list_reagents[rid]
@@ -185,7 +185,7 @@ All foods are distributed among various categories. Use common sense.
 			if(S.w_class > WEIGHT_CLASS_SMALL)
 				to_chat(user, "<span class='warning'>[S] is too big for [src]!</span>")
 				return FALSE
-			if(!S.customfoodfilling || istype(W, /obj/item/reagent_containers/food/snacks/customizable) || istype(W, /obj/item/reagent_containers/food/snacks/pizzaslice/custom))
+			if(!S.customfoodfilling || istype(W, /obj/item/reagent_containers/food/snacks/customizable))
 				to_chat(user, "<span class='warning'>[src] can't be filled with [S]!</span>")
 				return FALSE
 			if(contents.len >= 20)
@@ -196,7 +196,8 @@ All foods are distributed among various categories. Use common sense.
 			return FALSE
 	if(user.a_intent != INTENT_DISARM)
 		var/sharp = W.get_sharpness()
-		return sharp && slice(sharp, W, user)
+		if (sharp == SHARP_EDGED)
+			return slice(sharp, W, user)
 	else
 		return ..()
 
@@ -215,7 +216,7 @@ All foods are distributed among various categories. Use common sense.
 				qdel(A)
 	SSblackbox.record_feedback("tally", "food_made", 1, type)
 
-	if(bonus_reagents && bonus_reagents.len)
+	if(bonus_reagents?.len)
 		for(var/r_id in bonus_reagents)
 			var/amount = bonus_reagents[r_id]
 			if(r_id == /datum/reagent/consumable/nutriment || r_id == /datum/reagent/consumable/nutriment/vitamin || r_id == /datum/reagent/consumable/nutriment/protein)
@@ -295,11 +296,6 @@ All foods are distributed among various categories. Use common sense.
 				else
 					snackyfood.reagents.add_reagent(r_id, amount)
 		return
-	if(istype(S, /obj/item/food))
-		var/obj/item/food/non_snackyfood = S
-		non_snackyfood.create_reagents(non_snackyfood.max_volume)
-		if(reagents)
-			reagents.trans_to(non_snackyfood, reagents.total_volume)
 
 /obj/item/reagent_containers/food/snacks/microwave_act(obj/machinery/microwave/M)
 	var/turf/T = get_turf(src)
@@ -307,13 +303,14 @@ All foods are distributed among various categories. Use common sense.
 
 	if(cooked_type)
 		result = new cooked_type(T)
+		SEND_SIGNAL(result, COMSIG_ITEM_MICROWAVE_COOKED, src, M.efficiency)
 		if(istype(M))
 			initialize_cooked_food(result, M.efficiency)
 		else
 			initialize_cooked_food(result, 1)
 		SSblackbox.record_feedback("tally", "food_made", 1, result.type)
 	else
-		result = new /obj/item/reagent_containers/food/snacks/badrecipe(T)
+		result = new /obj/item/food/badrecipe(T)
 		if(istype(M) && M.dirty < 100)
 			M.dirty++
 	qdel(src)
@@ -331,15 +328,13 @@ All foods are distributed among various categories. Use common sense.
 		if(isdog(M))
 			var/mob/living/L = M
 			if(bitecount == 0 || prob(50))
-				M.manual_emote("nibbles away at \the [src]")
+				M.manual_emote("nibbles away at \the [src].")
 			bitecount++
 			L.taste(reagents) // why should carbons get all the fun?
 			if(bitecount >= 5)
-				var/sattisfaction_text = pick("burps from enjoyment", "yaps for more", "woofs twice", "looks at the area where \the [src] was")
-				if(sattisfaction_text)
-					M.manual_emote(sattisfaction_text)
+				var/satisfaction_text = pick("burps from enjoyment.", "yaps for more!", "woofs twice.", "looks at the area where \the [src] was.")
+				M.manual_emote(satisfaction_text)
 				qdel(src)
-
 
 // //////////////////////////////////////////////Store////////////////////////////////////////
 /// All the food items that can store an item inside itself, like bread or cake.

@@ -29,11 +29,17 @@
 	///When you take a bite you cant jam it in for surgery anymore.
 	var/useable = TRUE
 	var/list/food_reagents = list(/datum/reagent/consumable/nutriment = 5)
+	///The size of the reagent container
+	var/reagent_vol = 10
 
 /obj/item/organ/Initialize()
 	. = ..()
 	if(organ_flags & ORGAN_EDIBLE)
-		AddComponent(/datum/component/edible, food_reagents, null, RAW | MEAT | GROSS, null, 10, null, null, null, null, CALLBACK(src, .proc/OnEatFrom))
+		AddComponent(/datum/component/edible,\
+			initial_reagents = food_reagents,\
+			foodtypes = RAW | MEAT | GROSS,\
+			volume = reagent_vol,\
+			after_eat = CALLBACK(src, .proc/OnEatFrom))
 
 /obj/item/organ/proc/Insert(mob/living/carbon/M, special = FALSE, drop_if_replaced = TRUE)
 	if(!iscarbon(M) || owner == M)
@@ -60,16 +66,6 @@
 
 //Special is for instant replacement like autosurgeons
 /obj/item/organ/proc/Remove(mob/living/carbon/M, special = FALSE)
-	//Stop any reagent metabolizing on organ destruction
-	if(reagents && iscarbon(owner))
-		var/mob/living/carbon/body = owner
-		for(var/chem in reagents.reagent_list)
-			var/datum/reagent/reagent = chem
-			if(reagent.metabolizing)
-				reagent.metabolizing = FALSE
-				reagent.on_mob_end_metabolize(body)
-			reagent.on_mob_delete(body) //It was removed from the body
-
 	owner = null
 	if(M)
 		M.internal_organs -= src

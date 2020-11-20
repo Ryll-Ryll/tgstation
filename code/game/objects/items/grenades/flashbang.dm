@@ -50,20 +50,12 @@
 	var/flashbang_range = 1 //how many tiles away the mob will be stunned.
 	shrapnel_type = /obj/projectile/bullet/pellet/stingball
 	shrapnel_radius = 5
-	custom_premium_price = 700 // mostly gotten through cargo, but throw in one for the sec vendor ;)
+	custom_premium_price = PAYCHECK_HARD * 3.5 // mostly gotten through cargo, but throw in one for the sec vendor ;)
 
 /obj/item/grenade/stingbang/mega
 	name = "mega stingbang"
 	shrapnel_type = /obj/projectile/bullet/pellet/stingball/mega
 	shrapnel_radius = 12
-
-/obj/item/grenade/stingbang/breaker
-	name = "breakbang"
-	shrapnel_type = /obj/projectile/bullet/pellet/stingball/breaker
-
-/obj/item/grenade/stingbang/shred
-	name = "shredbang"
-	shrapnel_type = /obj/projectile/bullet/pellet/stingball/shred
 
 /obj/item/grenade/stingbang/prime(mob/living/lanced_by)
 	if(iscarbon(loc))
