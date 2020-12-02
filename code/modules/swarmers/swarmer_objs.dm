@@ -54,6 +54,14 @@
 	///Whether or not a swarmer is currently being created by this beacon
 	var/processing_swarmer = FALSE
 
+/obj/structure/swarmer_beacon/Initialize()
+	. = ..()
+	GLOB.poi_list |= src
+
+/obj/structure/swarmer_beacon/Destroy()
+	. = ..()
+	GLOB.poi_list.Remove(src)
+
 /obj/structure/swarmer_beacon/attack_ghost(mob/user)
 	. = ..()
 	if(processing_swarmer)
@@ -93,7 +101,7 @@
 						 3. BIOLOGICAL RESOURCES WILL BE HARVESTED AT A LATER DATE: DO NOT HARM THEM\n\
 						 OPERATOR NOTES:\n\
 						 - CONSUME RESOURCES TO CONSTRUCT TRAPS, BARRIERS, AND FOLLOWER DRONES\n\
-						 - FOLLOWER DRONES CAN BE ORDERED TO MOVE VIA MIDDLE CLICKING ON A TILE.  WHILE DRONES CANNOT ASSIST IN RESOURCE HARVESTING, THEY CAN PROTECT YOU FROM THREATS\n\
+						 - FOLLOWER DRONES WILL FOLLOW YOU AUTOMATCIALLY UNLESS THEY POSSESS A TARGET.  WHILE DRONES CANNOT ASSIST IN RESOURCE HARVESTING, THEY CAN PROTECT YOU FROM THREATS\n\
 						 - LCTRL + ATTACKING AN ORGANIC WILL ALOW YOU TO REMOVE SAID ORGANIC FROM THE AREA\n\
 						 - YOU AND YOUR DRONES HAVE A STUN EFFECT ON MELEE.  YOU ARE ALSO ARMED WITH A DISABLER PROJECTILE, USE THESE TO PREVENT ORGANICS FROM HALTING YOUR PROGRESS\n\
 						 GLORY TO !*# $*#^</span>")
@@ -141,7 +149,7 @@
 
 /obj/effect/temp_visual/swarmer/disintegration/Initialize()
 	. = ..()
-	playsound(loc, "sparks", 100, TRUE)
+	playsound(loc, "sparks", 100, TRUE, SHORT_RANGE_SOUND_EXTRARANGE)
 
 /obj/effect/temp_visual/swarmer/dismantle
 	icon_state = "dismantle"

@@ -175,7 +175,7 @@
 	GLOB.poi_list.Remove(src)
 	..()
 
-/obj/machinery/capture_the_flag/process()
+/obj/machinery/capture_the_flag/process(delta_time)
 	for(var/i in spawned_mobs)
 		if(!i)
 			spawned_mobs -= i
@@ -187,9 +187,8 @@
 		else
 			// The changes that you've been hit with no shield but not
 			// instantly critted are low, but have some healing.
-			living_participant.adjustBruteLoss(-5)
-			living_participant.adjustFireLoss(-5)
-
+			living_participant.adjustBruteLoss(-2.5 * delta_time)
+			living_participant.adjustFireLoss(-2.5 * delta_time)
 
 /obj/machinery/capture_the_flag/red
 	name = "Red CTF Controller"
@@ -298,14 +297,15 @@
 			victory()
 
 /obj/machinery/capture_the_flag/proc/victory()
-	for(var/mob/M in GLOB.mob_list)
-		var/area/mob_area = get_area(M)
+	for(var/mob/_competitor in GLOB.mob_living_list)
+		var/mob/living/competitor = _competitor
+		var/area/mob_area = get_area(competitor)
 		if(istype(mob_area, /area/ctf))
-			to_chat(M, "<span class='narsie [team_span]'>[team] team wins!</span>")
-			to_chat(M, "<span class='userdanger'>Teams have been cleared. Click on the machines to vote to begin another round.</span>")
-			for(var/obj/item/ctf/W in M)
-				M.dropItemToGround(W)
-			M.dust()
+			to_chat(competitor, "<span class='narsie [team_span]'>[team] team wins!</span>")
+			to_chat(competitor, "<span class='userdanger'>Teams have been cleared. Click on the machines to vote to begin another round.</span>")
+			for(var/obj/item/ctf/W in competitor)
+				competitor.dropItemToGround(W)
+			competitor.dust()
 	for(var/obj/machinery/control_point/control in GLOB.machines)
 		control.icon_state = "dominator"
 		control.controlling = null
@@ -360,10 +360,10 @@
 	ctf_enabled = FALSE
 	arena_reset = FALSE
 	var/area/A = get_area(src)
-	for(var/i in GLOB.mob_list)
-		var/mob/M = i
-		if((get_area(A) == A) && (M.ckey in team_members))
-			M.dust()
+	for(var/_competitor in GLOB.mob_living_list)
+		var/mob/living/competitor = _competitor
+		if((get_area(A) == A) && (competitor.ckey in team_members))
+			competitor.dust()
 	team_members.Cut()
 	spawned_mobs.Cut()
 	recently_dead_ckeys.Cut()
@@ -672,11 +672,11 @@
 	resistance_flags = INDESTRUCTIBLE
 	var/obj/machinery/capture_the_flag/controlling
 	var/team = "none"
-	var/point_rate = 1
+	var/point_rate = 0.5
 
-/obj/machinery/control_point/process()
+/obj/machinery/control_point/process(delta_time)
 	if(controlling)
-		controlling.control_points += point_rate
+		controlling.control_points += point_rate * delta_time
 		if(controlling.control_points >= controlling.control_points_to_win)
 			controlling.victory()
 

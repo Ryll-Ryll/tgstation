@@ -58,6 +58,7 @@ Difficulty: Medium
 	move_to_delay = 5
 	ranged = TRUE
 	pixel_x = -16
+	base_pixel_x = -16
 	crusher_loot = list(/obj/structure/closet/crate/necropolis/dragon/crusher)
 	loot = list(/obj/structure/closet/crate/necropolis/dragon)
 	butcher_results = list(/obj/item/stack/ore/diamond = 5, /obj/item/stack/sheet/sinew = 5, /obj/item/stack/sheet/bone = 30)
@@ -422,9 +423,6 @@ Difficulty: Medium
 	light_range = 2
 	duration = 13
 
-/obj/effect/temp_visual/lava_warning/ex_act()
-	return
-
 /obj/effect/temp_visual/lava_warning/Initialize(mapload, reset_time = 10)
 	. = ..()
 	INVOKE_ASYNC(src, .proc/fall, reset_time)
@@ -540,9 +538,6 @@ Difficulty: Medium
 	layer = BELOW_MOB_LAYER
 	light_range = 2
 	duration = 9
-
-/obj/effect/temp_visual/target/ex_act()
-	return
 
 /obj/effect/temp_visual/target/Initialize(mapload, list/flame_hit)
 	. = ..()

@@ -83,7 +83,7 @@
 	AddSpell(new /obj/effect/proc_holder/spell/aoe_turf/revenant/malfunction(null))
 	random_revenant_name()
 
-/mob/living/simple_animal/revenant/canUseTopic(atom/movable/M, be_close=FALSE, no_dexterity=FALSE, no_tk=FALSE)
+/mob/living/simple_animal/revenant/canUseTopic(atom/movable/M, be_close=FALSE, no_dexterity=FALSE, no_tk=FALSE, no_hands = FALSE, floor_okay=FALSE)
 	return FALSE
 
 /mob/living/simple_animal/revenant/proc/random_revenant_name()
@@ -471,12 +471,12 @@
 
 /datum/objective/revenant_fluff/New()
 	var/list/explanationTexts = list("Assist and exacerbate existing threats at critical moments.", \
-									 "Avoid killing in plain sight.", \
+									 "Impersonate or be worshipped as a god.", \
 									 "Cause as much chaos and anger as you can without being killed.", \
 									 "Damage and render as much of the station rusted and unusable as possible.", \
 									 "Disable and cause malfunctions in as many machines as possible.", \
 									 "Ensure that any holy weapons are rendered unusable.", \
-									 "Hinder the crew while attempting to avoid being noticed.", \
+									 "Heed and obey the requests of the dead, provided that carrying them out wouldn't be too inconvenient or self-destructive.", \
 									 "Make the crew as miserable as possible.", \
 									 "Make the clown as miserable as possible.", \
 									 "Make the captain as miserable as possible.", \

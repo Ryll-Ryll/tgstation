@@ -110,9 +110,23 @@
 	var/obj/machinery/portable_atmospherics/canister/C = O
 	var/worth = 10
 	var/gases = C.air_contents.gases
-	C.air_contents.assert_gases(/datum/gas/bz,/datum/gas/stimulum,/datum/gas/hypernoblium,/datum/gas/miasma,/datum/gas/tritium,/datum/gas/pluoxium,/datum/gas/freon,/datum/gas/hydrogen)
+	C.air_contents.assert_gases(/datum/gas/bz,
+								/datum/gas/stimulum,
+								/datum/gas/hypernoblium,
+								/datum/gas/miasma,
+								/datum/gas/tritium,
+								/datum/gas/pluoxium,
+								/datum/gas/freon,
+								/datum/gas/hydrogen,
+								/datum/gas/healium,
+								/datum/gas/proto_nitrate,
+								/datum/gas/zauker,
+								/datum/gas/helium,
+								/datum/gas/antinoblium,
+								/datum/gas/halon
+								)
 
-	worth += gases[/datum/gas/hypernoblium][MOLES]*1000
+	worth += gases[/datum/gas/hypernoblium][MOLES]*5
 	worth += gases[/datum/gas/stimulum][MOLES]*100
 	worth += gases[/datum/gas/freon][MOLES]*15
 	worth += gases[/datum/gas/tritium][MOLES]*5
@@ -120,4 +134,10 @@
 	worth += gases[/datum/gas/bz][MOLES]*4
 	worth += gases[/datum/gas/miasma][MOLES]*2
 	worth += gases[/datum/gas/hydrogen][MOLES]*1
+	worth += gases[/datum/gas/healium][MOLES]*19
+	worth += gases[/datum/gas/proto_nitrate][MOLES]*5
+	worth += gases[/datum/gas/zauker][MOLES]*1050
+	worth += gases[/datum/gas/helium][MOLES]*6
+	worth += gases[/datum/gas/antinoblium][MOLES]*10
+	worth += gases[/datum/gas/halon][MOLES]*9
 	return worth
