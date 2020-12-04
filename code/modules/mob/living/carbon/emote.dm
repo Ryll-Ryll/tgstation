@@ -141,7 +141,7 @@
 /datum/emote/living/carbon/awrassle
 	key = "awrassle"
 	key_third_person = "awrassles"
-	restraint_check = TRUE
+	hands_use_check = TRUE
 
 /datum/emote/living/carbon/awrassle/run_emote(mob/user, params, type_override, intentional)
 	. = ..()

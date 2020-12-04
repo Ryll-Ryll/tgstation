@@ -102,7 +102,7 @@
 	var/mob/living/carbon/owner = parent
 	if(potential_challenger.active_hand_index != owner_arm.held_index)
 		potential_challenger.visible_message("<span class='warning'>[potential_challenger] tries grabbing [owner]'s [owner_arm.name] with the wrong hand!</span>")
-		return COMPONENT_NO_ATTACK_HAND // idiot
+		return COMPONENT_CANCEL_ATTACK_CHAIN // idiot
 	return
 
 /// Here's where we start the battle and set off the bells and whistles announcing it, then move the party over to [/datum/component/arm_wrassle/proc/update_battle]

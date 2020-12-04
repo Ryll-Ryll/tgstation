@@ -961,6 +961,7 @@ for further reading, please see: https://github.com/tgstation/tgstation/pull/301
 	attack_verb_continuous = list("slaps")
 	attack_verb_simple = list("slap")
 	hitsound = 'sound/effects/snap.ogg'
+	alpha = 120
 	/// If FALSE, we haven't set a challenge yet and need to delete if it's been dropped (can't handle it in the component since it isn't there yet)
 	var/challenge_set = FALSE
 
