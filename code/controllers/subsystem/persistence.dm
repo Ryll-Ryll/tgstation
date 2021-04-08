@@ -33,6 +33,7 @@ SUBSYSTEM_DEF(persistence)
 		LoadAntagReputation()
 	LoadRandomizedRecipes()
 	LoadPaintings()
+	LoadBlags()
 
 	GLOB.explorer_drone_adventures = load_adventures()
 	return ..()
@@ -411,3 +412,9 @@ SUBSYSTEM_DEF(persistence)
 			original_human.save_persistent_scars(TRUE)
 		else
 			original_human.save_persistent_scars()
+
+/datum/controller/subsystem/persistence/proc/LoadBlags()
+	GLOB.microblag_server.load_server()
+
+/datum/controller/subsystem/persistence/proc/SaveBlags()
+	GLOB.microblag_server.save_server()

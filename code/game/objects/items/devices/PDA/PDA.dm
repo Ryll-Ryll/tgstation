@@ -84,6 +84,8 @@ GLOBAL_LIST_EMPTY(PDAs)
 	var/overlays_x_offset = 0 //x offset to use for certain overlays
 
 	var/underline_flag = TRUE //flag for underline
+	/// What page we're currently on for microblogging
+	var/blag_page = 1
 
 /obj/item/pda/suicide_act(mob/living/carbon/user)
 	var/deathMessage = msg_input(user)
@@ -263,6 +265,7 @@ GLOBAL_LIST_EMPTY(PDAs)
 				dat += "<li><a href='byond://?src=[REF(src)];choice=1'>[PDAIMG(notes)]Notekeeper</a></li>"
 				dat += "<li><a href='byond://?src=[REF(src)];choice=2'>[PDAIMG(mail)]Messenger</a></li>"
 				dat += "<li><a href='byond://?src=[REF(src)];choice=6'>[PDAIMG(skills)]Skill Tracker</a></li>"
+				dat += "<li><a href='byond://?src=[REF(src)];choice=7'>[PDAIMG(mail)]Shatter</a></li>"
 
 				if (cartridge)
 					if (cartridge.access & CART_CLOWN)
@@ -396,6 +399,26 @@ GLOBAL_LIST_EMPTY(PDAs)
 						if (lvl_num >= length(SKILL_EXP_LIST) && !(type in targetmind.skills_rewarded))
 							dat += "<br><a href='byond://?src=[REF(src)];choice=SkillReward;skill=[type]'>Contact the Professional [S.title] Association</a>"
 						dat += "</li></ul>"
+			if(7)
+				dat += "<h4>[PDAIMG(mail)] Shatter Microblogging Service</h4>"
+				dat += "<i>Welcome to Shatter! At some point, you have or will create an account with our service. To enhance consumer experience, login has already keyed in.</i>"
+				dat += "<br><br>Have fun! Chat with new and old friends alike! Don't think too hard about it!<br>"
+
+				dat += "<br><br>"
+				dat += "<br><a href='byond://?src=[REF(src)];choice=AddBlag'>Compose New Post</a>"
+
+				var/total_blag_pages = GLOB.microblag_server.get_num_pages()
+				var/page = clamp(blag_page, 1, total_blag_pages)
+				var/list/page_blags = GLOB.microblag_server.get_blags(page)
+				for(var/datum/blag/iter_blag as anything in page_blags)
+					dat += "<br>Shard #[iter_blag.local_id] by <b>[iter_blag.owner_charname]</b>: [iter_blag.message_text]"
+
+				var/back = (page > 1 ? "<a href='byond://?src=[REF(src)];choice=BlagPage;page=[page-1]'>\<</a>" : "")
+
+				var/forward = (page < total_blag_pages ? "<a href='byond://?src=[REF(src)];choice=BlagPage;page=[page+1]'>\></a>" : "")
+
+				dat += "<br><br>[back]|page [page]|[forward]"
+
 			if(21)
 				dat += "<h4>[PDAIMG(mail)] SpaceMessenger V3.9.6</h4>"
 				dat += "<a href='byond://?src=[REF(src)];choice=Clear'>[PDAIMG(blank)]Clear Messages</a>"
@@ -662,6 +685,26 @@ GLOBAL_LIST_EMPTY(PDAs)
 				var/new_level = mind.get_skill_level(type)
 				S.try_skill_reward(mind, new_level)
 
+//BLAG FUNCTIONS===================================
+
+			if("AddBlag")
+				var/blag_text = stripped_input(U, "What's on your mind?", name, null, 30)
+				if(!blag_text || !U || !in_range(U, src) || loc != U)
+					return
+				var/datum/blag/new_blag = new(U, blag_text)
+				if(new_blag)
+					GLOB.microblag_server.submit_blag(new_blag)
+					to_chat(U, "<span class='nicegreen'>Shard submitted!</span>")
+
+			if("BlagPage")
+				if(!href_list["page"])
+					testing("blagpage called without page href")
+					return
+				var/max_pages = GLOB.microblag_server.get_num_pages()
+				var/new_blag_page = clamp(text2num(href_list["page"]), 1, max_pages)
+				testing("Was page [blag_page] | Now [new_blag_page]")
+				blag_page = new_blag_page
+
 //LINK FUNCTIONS===================================
 
 			else//Cartridge menu linking
@@ -798,7 +841,7 @@ GLOBAL_LIST_EMPTY(PDAs)
 			playsound(src, pick('sound/machines/twobeep_voice1.ogg', 'sound/machines/twobeep_voice2.ogg'), 50, TRUE)
 		else
 			playsound(src, 'sound/machines/twobeep_high.ogg', 50, TRUE)
-		audible_message("<span class='infoplain'>[icon2html(src, hearers(src))] *[ttone]*</span>", null, 3)
+		audible_message("[icon2html(src, hearers(src))] *[ttone]*", null, 3)
 	//Search for holder of the PDA.
 	var/mob/living/L = null
 	if(loc && isliving(loc))
