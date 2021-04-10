@@ -432,6 +432,7 @@ GLOBAL_LIST_EMPTY(PDAs)
 				dat += "<br><br>"
 				var/current_username = GLOB.microblag_server.get_username(owner_ckey) || "???"
 				dat += "<br>Username: <a href='byond://?src=[REF(src)];choice=BlagUpdateUsername'>[current_username]</a>"
+				dat += "<br>[PDAIMG(emoji)] <a href='byond://?src=[REF(src)];choice=UpdatePic'>Update Picture</a>"
 
 			if(21)
 				dat += "<h4>[PDAIMG(mail)] SpaceMessenger V3.9.6</h4>"
@@ -719,7 +720,20 @@ GLOBAL_LIST_EMPTY(PDAs)
 				testing("Was page [blag_page] | Now [new_blag_page]")
 				blag_page = new_blag_page
 
-			if("UpdateBlagUsername")
+			if("BlagUpdateUsername")
+				var/t = stripped_input(U, "Please enter new username", name, ttone, BLAG_USERNAME_MAX_LENGTH)
+				if(in_range(src, U) && loc == U && t)
+					GLOB.microblag_server.update_username(owner_ckey, t)
+					U << browse(null, "window=pda")
+					return
+
+			if("BlagUpdateUsername")
+				if(!picture)
+					to_chat(U, "ERROR: Please scan a 1x1 photo with your PDA to update picture.")
+					U << browse(null, "window=pda")
+					return
+				if(picture.psize_x != world.icon_size || picture.psize_y != world.icon_size)
+					to_chat(U, "ERROR: Please scan a 1x1 photo with your PDA to update picture.")
 				var/t = stripped_input(U, "Please enter new username", name, ttone, BLAG_USERNAME_MAX_LENGTH)
 				if(in_range(src, U) && loc == U && t)
 					GLOB.microblag_server.update_username(owner_ckey, t)

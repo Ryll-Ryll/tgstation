@@ -27,17 +27,12 @@
 	var/local_id = 0
 
 /datum/blag/New(mob/user, message)
-	if(!user?.ckey)
-		qdel(src)
-		return
-
 	owner_ckey = user.ckey
 	owner_charname = user.real_name
 	message_text = message
 	sub_datetime = world.time // figure out what Now() returns in sql
 
 /datum/blag/Destroy(force, ...)
-	testing("Blag being destroyed: [message_text]")
 	LAZYREMOVE(GLOB.microblag_server.blags, src)
 	return ..()
 
@@ -75,19 +70,9 @@
 
 	var/list/usernames_by_ckey = list()
 
-/datum/microblag_server/proc/get_username(target)
-	var/target_ckey
-	if(istype(target, /client))
-		var/client/target_client = target
-		target_ckey = target_client.key
-	else if(ismob(target))
-		var/mob/target_mob = target
-		target_ckey = target_mob.ckey
-	else if(istext(target))
-		target_ckey = ckey(target)
-
+/datum/microblag_server/proc/get_username(target_ckey)
 	if(!target_ckey)
-		stack_trace("ERROR: Tried getting ckey for blag username of invalid target. Target value: [target]")
+		stack_trace("ERROR: Tried getting ckey for blag username of invalid target. Target value: [target_ckey]")
 		return
 
 	if(usernames_by_ckey[target_ckey])
@@ -106,21 +91,9 @@
 		usernames_by_ckey[target_ckey] = result
 		return result
 
-	// no record found, make one
-	INVOKE_ASYNC(src, .proc/create_user, target_ckey)
-	return target_ckey
+	return create_user(target_ckey)
 
-/datum/microblag_server/proc/create_user(target)
-	var/target_ckey
-	if(istype(target, /client))
-		var/client/target_client = target
-		target_ckey = target_client.key
-	else if(ismob(target))
-		var/mob/target_mob = target
-		target_ckey = target_mob.ckey
-	else if(istext(target))
-		target_ckey = ckey(target)
-
+/datum/microblag_server/proc/create_user(target_ckey)
 	var/default_username = strip_html(target_ckey, BLAG_USERNAME_MAX_LENGTH)
 	var/mob/living/possible_target_mob = get_mob_by_ckey(target_ckey)
 	if(istype(possible_target_mob))
@@ -132,7 +105,6 @@
 
 	if(!default_username)
 		CRASH("fc")
-		return
 
 	testing("Trying to create user with name [default_username]")
 	var/datum/db_query/insert_user = SSdbcore.NewQuery(
@@ -147,17 +119,7 @@
 	qdel(insert_user)
 	return TRUE
 
-/datum/microblag_server/proc/update_username(target, new_username)
-	var/target_ckey
-	if(istype(target, /client))
-		var/client/target_client = target
-		target_ckey = target_client.key
-	else if(ismob(target))
-		var/mob/target_mob = target
-		target_ckey = target_mob.ckey
-	else if(istext(target))
-		target_ckey = ckey(target)
-
+/datum/microblag_server/proc/update_username(target_ckey, new_username)
 	if(!new_username)
 		new_username = target_ckey
 	new_username = strip_html(new_username, BLAG_USERNAME_MAX_LENGTH)
@@ -178,6 +140,8 @@
 	LAZYADD(blags, new_blag)
 	local_id++
 	new_blag.local_id = local_id
+	if(!usernames_by_ckey[new_blag.owner_ckey])
+		get_username(new_blag.owner_ckey)
 
 /// Run an SQL query to load all the DB posts
 /datum/microblag_server/proc/load_server(datum/blag/new_blag)
@@ -191,15 +155,16 @@
 		qdel(load_the_blags)
 		return -1
 
-	var/list/loading_blags = list()
+	var/count
+
 	while(load_the_blags.NextRow())
 		testing("starting load either [json_encode(load_the_blags.item)] or [json_encode(load_the_blags.item[1])]")
-		loading_blags += list(load_the_blags.item)
 		var/datum/blag/loaded_blag = new
 		loaded_blag.recreate(load_the_blags.item)
-		LAZYADD(blags, loaded_blag)
+		submit_blag(loaded_blag)
+		count++
 		testing("loaded blag [json_encode(loaded_blag)] | [json_encode(list(load_the_blags.item))]")
-	testing("Loaded [length(loading_blags)] blags")
+	testing("Loaded [count] blags")
 	qdel(load_the_blags)
 
 /// Saving all of the new collected blag posts to the SQL DB
