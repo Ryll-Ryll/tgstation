@@ -86,6 +86,8 @@ GLOBAL_LIST_EMPTY(PDAs)
 	var/underline_flag = TRUE //flag for underline
 	/// What page we're currently on for microblogging
 	var/blag_page = 1
+	/// The original owner's ckey, for blogging
+	var/owner_ckey
 
 /obj/item/pda/suicide_act(mob/living/carbon/user)
 	var/deathMessage = msg_input(user)
@@ -405,7 +407,8 @@ GLOBAL_LIST_EMPTY(PDAs)
 				dat += "<br><br>Have fun! Chat with new and old friends alike! Don't think too hard about it!<br>"
 
 				dat += "<br><br>"
-				dat += "<br><a href='byond://?src=[REF(src)];choice=AddBlag'>Compose New Post</a>"
+				dat += "<br>[PDAIMG(menu)] <a href='byond://?src=[REF(src)];choice=71'>Settings</a>"
+				dat += "<br>[PDAIMG(notes)] <a href='byond://?src=[REF(src)];choice=AddBlag'>Compose New Post</a>"
 
 				var/total_blag_pages = GLOB.microblag_server.get_num_pages()
 				var/page = clamp(blag_page, 1, total_blag_pages)
@@ -418,6 +421,15 @@ GLOBAL_LIST_EMPTY(PDAs)
 				var/forward = (page < total_blag_pages ? "<a href='byond://?src=[REF(src)];choice=BlagPage;page=[page+1]'>\></a>" : "")
 
 				dat += "<br><br>[back]|page [page]|[forward]"
+
+			if(71)
+				dat += "<h4>[PDAIMG(mail)] Shatter Microblogging Settings</h4>"
+				dat += "<i>Account deactivation is currently disabled, thank you!</i>"
+				dat += "<br><br>Have fun! Chat with new and old friends alike! Don't think too hard about it!<br>"
+
+				dat += "<br><br>"
+				var/current_username = GLOB.microblag_server.get_username(owner_ckey) || "???"
+				dat += "<br>Username: <a href='byond://?src=[REF(src)];choice=BlagUpdateUsername'>[current_username]</a>"
 
 			if(21)
 				dat += "<h4>[PDAIMG(mail)] SpaceMessenger V3.9.6</h4>"
@@ -704,6 +716,13 @@ GLOBAL_LIST_EMPTY(PDAs)
 				var/new_blag_page = clamp(text2num(href_list["page"]), 1, max_pages)
 				testing("Was page [blag_page] | Now [new_blag_page]")
 				blag_page = new_blag_page
+
+			if("UpdateBlagUsername")
+				var/t = stripped_input(U, "Please enter new username", name, ttone, BLAG_USERNAME_MAX_LENGTH)
+				if(in_range(src, U) && loc == U && t)
+					GLOB.microblag_server.update_username(owner_ckey, t)
+					U << browse(null, "window=pda")
+					return
 
 //LINK FUNCTIONS===================================
 

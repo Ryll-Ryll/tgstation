@@ -1,3 +1,6 @@
+#define BLAG_USERNAME_MAX_LENGTH 10
+
+
 /// An individual microblog post (called a Shard)
 /datum/blag
 	/// The ckey associated with this
@@ -62,6 +65,97 @@
 	var/local_id = 0
 	/// To be set when the posts are loaded from sql, so we can start showing local ID's after these
 	var/existing_sql_offset
+
+	var/list/usernames_by_ckey
+
+/datum/microblag_server/proc/get_username(target)
+	var/target_ckey
+	if(istype(target, /client))
+		var/client/target_client = target
+		target_ckey = target_client.key
+	else if(ismob(target))
+		var/mob/target_mob = target
+		target_ckey = target_mob.ckey
+	else if(istext(target))
+		target_ckey = ckey(target_ckey)
+
+	if(!target_ckey)
+		stack_trace("ERROR: Tried getting ckey for blag username of invalid target. Target value: [target]")
+		return
+
+	if(usernames_by_ckey[target_ckey])
+		return usernames_by_ckey[target_ckey]
+
+	var/datum/db_query/fetch_username = SSdbcore.NewQuery(
+		"SELECT username FROM [format_table_name("blag_accounts")] WHERE ckey = '[target_ckey]' LIMIT 1"
+	)
+	if(!fetch_username.Execute())
+		qdel(fetch_username)
+		return
+
+	var/result = fetch_username.item[1]
+	if(result)
+		usernames_by_ckey[target_ckey] = result
+		return result
+
+	// no record found, make one
+	INVOKE_ASYNC(src, .proc/create_user, target_ckey)
+	return target_ckey
+
+/datum/microblag_server/proc/create_user(target)
+	var/target_ckey
+	if(istype(target, /client))
+		var/client/target_client = target
+		target_ckey = target_client.key
+	else if(ismob(target))
+		var/mob/target_mob = target
+		target_ckey = target_mob.ckey
+	else if(istext(target))
+		target_ckey = ckey(target_ckey)
+
+	var/default_username = strip_html(target_ckey, BLAG_USERNAME_MAX_LENGTH) // have this be like first letter lastname of whatever character they have if possible
+
+	if(!default_username)
+		CRASH("fc")
+		return
+
+	var/datum/db_query/insert_user = SSdbcore.NewQuery(
+		"INSERT INTO [format_table_name("blag_accounts")] (ckey, username, registered_dateime) VALUES (:ckey, :username, :datetime)",\
+		list("ckey" = target_ckey, "username" = default_username, "datetime" = SQLtime())
+	)
+	if(!insert_user.Execute())
+		qdel(insert_user)
+		return
+
+	usernames_by_ckey[target_ckey] = default_username
+	qdel(insert_user)
+	return TRUE
+
+/datum/microblag_server/proc/update_username(target, new_username)
+	var/target_ckey
+	if(istype(target, /client))
+		var/client/target_client = target
+		target_ckey = target_client.key
+	else if(ismob(target))
+		var/mob/target_mob = target
+		target_ckey = target_mob.ckey
+	else if(istext(target))
+		target_ckey = ckey(target_ckey)
+
+	if(!new_username)
+		new_username = target_ckey
+	new_username = strip_html(new_username, BLAG_USERNAME_MAX_LENGTH)
+
+	var/datum/db_query/update_username = SSdbcore.NewQuery(
+		"UPDATE [format_table_name("blag_accounts")] SET username = '[new_username]` WHERE ckey = '[target_ckey]'"
+	)
+	if(!update_username.Execute())
+		qdel(update_username)
+		return
+
+	usernames_by_ckey[target_ckey] = new_username
+	qdel(update_username)
+	return TRUE
 
 /// Add a blag datum to the party
 /datum/microblag_server/proc/submit_blag(datum/blag/new_blag)

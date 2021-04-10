@@ -288,6 +288,7 @@
 	if(istype(PDA))
 		PDA.owner = H.real_name
 		PDA.ownjob = J.title
+		PDA.owner_ckey = H.ckey
 		PDA.update_label()
 
 	if(H.client?.prefs.playtime_reward_cloak)
