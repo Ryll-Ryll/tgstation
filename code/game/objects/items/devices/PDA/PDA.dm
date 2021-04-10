@@ -402,6 +402,8 @@ GLOBAL_LIST_EMPTY(PDAs)
 							dat += "<br><a href='byond://?src=[REF(src)];choice=SkillReward;skill=[type]'>Contact the Professional [S.title] Association</a>"
 						dat += "</li></ul>"
 			if(7)
+				if(!owner_ckey)
+					owner_ckey = user.ckey
 				dat += "<h4>[PDAIMG(mail)] Shatter Microblogging Service</h4>"
 				dat += "<i>Welcome to Shatter! At some point, you have or will create an account with our service. To enhance consumer experience, login has already keyed in.</i>"
 				dat += "<br><br>Have fun! Chat with new and old friends alike! Don't think too hard about it!<br>"

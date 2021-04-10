@@ -288,7 +288,7 @@
 	if(istype(PDA))
 		PDA.owner = H.real_name
 		PDA.ownjob = J.title
-		PDA.owner_ckey = H.ckey
+		PDA.owner_ckey = H.ckey // newly spawning players won't have this
 		PDA.update_label()
 
 	if(H.client?.prefs.playtime_reward_cloak)

@@ -36,6 +36,12 @@
 	message_text = message
 	sub_datetime = world.time // figure out what Now() returns in sql
 
+/datum/blag/Destroy(force, ...)
+	testing("Blag being destroyed: [message_text]")
+	LAZYREMOVE(GLOB.microblag_server.blags, src)
+	return ..()
+
+
 /datum/blag/proc/get_db_row()
 	return list(
 		"author_ckey" = owner_ckey,
@@ -48,6 +54,7 @@
 
 /datum/blag/proc/recreate(list/row)
 	sql_id = text2num(row[1])
+	local_id = sql_id
 	owner_ckey = row[2]
 	owner_charname = row[3]
 	message_text = row[4]
@@ -66,7 +73,7 @@
 	/// To be set when the posts are loaded from sql, so we can start showing local ID's after these
 	var/existing_sql_offset
 
-	var/list/usernames_by_ckey
+	var/list/usernames_by_ckey = list()
 
 /datum/microblag_server/proc/get_username(target)
 	var/target_ckey
@@ -77,7 +84,7 @@
 		var/mob/target_mob = target
 		target_ckey = target_mob.ckey
 	else if(istext(target))
-		target_ckey = ckey(target_ckey)
+		target_ckey = ckey(target)
 
 	if(!target_ckey)
 		stack_trace("ERROR: Tried getting ckey for blag username of invalid target. Target value: [target]")
@@ -93,7 +100,8 @@
 		qdel(fetch_username)
 		return
 
-	var/result = fetch_username.item[1]
+	testing("result from get: [json_encode(fetch_username.item)]")
+	var/result = fetch_username.item
 	if(result)
 		usernames_by_ckey[target_ckey] = result
 		return result
@@ -111,16 +119,24 @@
 		var/mob/target_mob = target
 		target_ckey = target_mob.ckey
 	else if(istext(target))
-		target_ckey = ckey(target_ckey)
+		target_ckey = ckey(target)
 
-	var/default_username = strip_html(target_ckey, BLAG_USERNAME_MAX_LENGTH) // have this be like first letter lastname of whatever character they have if possible
+	var/default_username = strip_html(target_ckey, BLAG_USERNAME_MAX_LENGTH)
+	var/mob/living/possible_target_mob = get_mob_by_ckey(target_ckey)
+	if(istype(possible_target_mob))
+		var/list/name_split = splittext(possible_target_mob.real_name, " ")
+		if(length(name_split) >= 2)
+			default_username = "[name_split[1][1]][name_split[2]]" //flast
+		else
+			default_username = name_split[1]
 
 	if(!default_username)
 		CRASH("fc")
 		return
 
+	testing("Trying to create user with name [default_username]")
 	var/datum/db_query/insert_user = SSdbcore.NewQuery(
-		"INSERT INTO [format_table_name("blag_accounts")] (ckey, username, registered_dateime) VALUES (:ckey, :username, :datetime)",\
+		"INSERT INTO [format_table_name("blag_accounts")] (ckey, username, registered_datetime) VALUES (:ckey, :username, :datetime)",\
 		list("ckey" = target_ckey, "username" = default_username, "datetime" = SQLtime())
 	)
 	if(!insert_user.Execute())
@@ -140,7 +156,7 @@
 		var/mob/target_mob = target
 		target_ckey = target_mob.ckey
 	else if(istext(target))
-		target_ckey = ckey(target_ckey)
+		target_ckey = ckey(target)
 
 	if(!new_username)
 		new_username = target_ckey
