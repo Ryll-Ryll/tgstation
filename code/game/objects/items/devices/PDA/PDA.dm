@@ -85,7 +85,7 @@ GLOBAL_LIST_EMPTY(PDAs)
 
 	var/underline_flag = TRUE //flag for underline
 	/// What page we're currently on for microblogging
-	var/blag_page = 1
+	var/current_blog_page = 1
 	/// The original owner's ckey, for blogging
 	var/owner_ckey
 
@@ -410,17 +410,17 @@ GLOBAL_LIST_EMPTY(PDAs)
 
 				dat += "<br><br>"
 				dat += "<br>[PDAIMG(menu)] <a href='byond://?src=[REF(src)];choice=71'>Settings</a>"
-				dat += "<br>[PDAIMG(notes)] <a href='byond://?src=[REF(src)];choice=AddBlag'>Compose New Post</a>"
+				dat += "<br>[PDAIMG(notes)] <a href='byond://?src=[REF(src)];choice=SubmitBlogPost'>Compose New Post</a>"
 
-				var/total_blag_pages = GLOB.microblag_server.get_num_pages()
-				var/page = clamp(blag_page, 1, total_blag_pages)
-				var/list/page_blags = GLOB.microblag_server.get_blags(page)
-				for(var/datum/blag/iter_blag as anything in page_blags)
-					dat += "<br>Shard #[iter_blag.local_id] by <b>[iter_blag.owner_charname]</b>: [iter_blag.message_text]"
+				var/total_current_blog_pages = GLOB.microblog_server.get_num_pages()
+				var/page = clamp(current_blog_page, 1, total_current_blog_pages)
+				var/list/current_page_blog_posts = GLOB.microblog_server.get_blog_posts(page)
+				for(var/datum/blog_post/iter_blog_post as anything in current_page_blog_posts)
+					dat += "<br>Shard #[iter_blog_post.local_id] by <b>[iter_blog_post.owner_charname]</b>: [iter_blog_post.message_text]"
 
-				var/back = (page > 1 ? "<a href='byond://?src=[REF(src)];choice=BlagPage;page=[page-1]'>\<</a>" : "")
+				var/back = (page > 1 ? "<a href='byond://?src=[REF(src)];choice=ChangeBlogPage;page=[page-1]'>\<</a>" : "")
 
-				var/forward = (page < total_blag_pages ? "<a href='byond://?src=[REF(src)];choice=BlagPage;page=[page+1]'>\></a>" : "")
+				var/forward = (page < total_current_blog_pages ? "<a href='byond://?src=[REF(src)];choice=ChangeBlogPage;page=[page+1]'>\></a>" : "")
 
 				dat += "<br><br>[back]|page [page]|[forward]"
 
@@ -430,8 +430,8 @@ GLOBAL_LIST_EMPTY(PDAs)
 				dat += "<br><br>Have fun! Chat with new and old friends alike! Don't think too hard about it!<br>"
 
 				dat += "<br><br>"
-				var/current_username = GLOB.microblag_server.get_username(owner_ckey) || "???"
-				dat += "<br>Username: <a href='byond://?src=[REF(src)];choice=BlagUpdateUsername'>[current_username]</a>"
+				var/current_username = GLOB.microblog_server.get_username(owner_ckey) || "???"
+				dat += "<br>Username: <a href='byond://?src=[REF(src)];choice=UpdateBlogUsername'>[current_username]</a>"
 				dat += "<br>[PDAIMG(emoji)] <a href='byond://?src=[REF(src)];choice=UpdatePic'>Update Picture</a>"
 
 			if(21)
@@ -700,43 +700,43 @@ GLOBAL_LIST_EMPTY(PDAs)
 				var/new_level = mind.get_skill_level(type)
 				S.try_skill_reward(mind, new_level)
 
-//BLAG FUNCTIONS===================================
+//BLOG FUNCTIONS===================================
 
-			if("AddBlag")
-				var/blag_text = stripped_input(U, "What's on your mind?", name, null, 30)
-				if(!blag_text || !U || !in_range(U, src) || loc != U)
+			if("SubmitBlogPost")
+				var/blog_text = stripped_input(U, "What's on your mind?", name, null, 30)
+				if(!blog_text || !U || !in_range(U, src) || loc != U)
 					return
-				var/datum/blag/new_blag = new(U, blag_text)
-				if(new_blag)
-					GLOB.microblag_server.submit_blag(new_blag)
+				var/datum/blog_post/new_blog_post = new(U, blog_text)
+				if(new_blog_post)
+					GLOB.microblog_server.submit_blog_post(new_blog_post)
 					to_chat(U, "<span class='nicegreen'>Shard submitted!</span>")
 
-			if("BlagPage")
+			if("ChangeBlogPage")
 				if(!href_list["page"])
-					testing("blagpage called without page href")
+					testing("ChangeBlogPage called without page href")
 					return
-				var/max_pages = GLOB.microblag_server.get_num_pages()
-				var/new_blag_page = clamp(text2num(href_list["page"]), 1, max_pages)
-				testing("Was page [blag_page] | Now [new_blag_page]")
-				blag_page = new_blag_page
+				var/max_pages = GLOB.microblog_server.get_num_pages()
+				var/new_blog_post_page = clamp(text2num(href_list["page"]), 1, max_pages)
+				testing("Was page [current_blog_page] | Now [new_blog_post_page]")
+				current_blog_page = new_blog_post_page
 
-			if("BlagUpdateUsername")
-				var/t = stripped_input(U, "Please enter new username", name, ttone, BLAG_USERNAME_MAX_LENGTH)
+			if("UpdateBlogUsername")
+				var/t = stripped_input(U, "Please enter new username", name, ttone, BLOG_USERNAME_MAX_LENGTH)
 				if(in_range(src, U) && loc == U && t)
-					GLOB.microblag_server.update_username(owner_ckey, t)
+					GLOB.microblog_server.update_username(owner_ckey, t)
 					U << browse(null, "window=pda")
 					return
 
-			if("BlagUpdateUsername")
+			if("UpdateBlogUsername")
 				if(!picture)
 					to_chat(U, "ERROR: Please scan a 1x1 photo with your PDA to update picture.")
 					U << browse(null, "window=pda")
 					return
 				if(picture.psize_x != world.icon_size || picture.psize_y != world.icon_size)
 					to_chat(U, "ERROR: Please scan a 1x1 photo with your PDA to update picture.")
-				var/t = stripped_input(U, "Please enter new username", name, ttone, BLAG_USERNAME_MAX_LENGTH)
+				var/t = stripped_input(U, "Please enter new username", name, ttone, BLOG_USERNAME_MAX_LENGTH)
 				if(in_range(src, U) && loc == U && t)
-					GLOB.microblag_server.update_username(owner_ckey, t)
+					GLOB.microblog_server.update_username(owner_ckey, t)
 					U << browse(null, "window=pda")
 					return
 

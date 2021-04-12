@@ -11,7 +11,7 @@ GLOBAL_VAR_INIT(fileaccess_timer, 0)
 
 GLOBAL_DATUM_INIT(data_core, /datum/datacore, new)
 
-GLOBAL_DATUM_INIT(microblag_server, /datum/microblag_server, new)
+GLOBAL_DATUM_INIT(microblog_server, /datum/microblog_server, new)
 
 GLOBAL_VAR_INIT(CELLRATE, 0.002)  // conversion ratio between a watt-tick and kilojoule
 GLOBAL_VAR_INIT(CHARGELEVEL, 0.001) // Cap for how fast cells charge, as a percentage-per-tick (.001 means cellcharge is capped to 1% per second)
