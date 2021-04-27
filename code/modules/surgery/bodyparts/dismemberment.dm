@@ -4,7 +4,7 @@
 		return TRUE
 
 //Dismember a limb
-/obj/item/bodypart/proc/dismember(dam_type = BRUTE, silent=TRUE)
+/obj/item/bodypart/proc/dismember(dam_type = BRUTE, silent=FALSE)
 	if(!owner || !dismemberable)
 		return FALSE
 	var/mob/living/carbon/C = owner

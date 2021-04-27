@@ -964,3 +964,68 @@ GENE SCANNER
 #undef SCANMODE_COUNT
 #undef SCANNER_CONDENSED
 #undef SCANNER_VERBOSE
+
+/obj/item/catdetector
+	name = "cat detector"
+	icon = 'icons/obj/device.dmi'
+	icon_state = "adv_spectrometer"
+	desc = "A highly advanced scanning device used for determining whether something is, or is not, a cat. The methods it uses to reach its conclusion are unknowable to mortals, but it is never wrong."
+	/// How long it takes to complete a scan
+	var/scan_time = 10 SECONDS
+	/// The cooldown for the scan
+	COOLDOWN_DECLARE(scanning_cd)
+	/// Have we already warned the user for
+	var/greedy_warning = FALSE
+	/// If a carbon user uses the scanner multiple times while it's already scanning, they're gonna lose the arm they used to press the button
+	var/obj/item/bodypart/greedy_arm
+	/// If a non-carbon somehow pisses off the scanner, or the greedy_arm is destroyed before we slice it off, we use this to just maim them
+	var/mob/living/greedy_mob_fallback
+
+/obj/item/catdetector/afterattack(atom/target, mob/user, proximity_flag, click_parameters)
+	. = ..()
+	if(!COOLDOWN_FINISHED(src, scanning_cd))
+		deal_with_impatience(user)
+		return FALSE
+
+	if(user == target)
+		user.visible_message("<span class='notice'>[user] points [src] at [user.p_them()]self.</span>", "<span class='notice'>You point [src] at yourself.</span>")
+	else
+		user.visible_message("<span class='notice'>[user] points [src] at [target].</span>", "<span class='notice'>You point [src] at [target].</span>")
+	playsound(src, 'sound/machines/modem.ogg', 50, TRUE, extrarange = MEDIUM_RANGE_SOUND_EXTRARANGE)
+	addtimer(CALLBACK(src, .proc/report_results, target), scan_time)
+	COOLDOWN_START(src, scanning_cd, scan_time)
+	return FALSE
+
+/// This proc runs when someone uses the scanner again while it's already processing a scan. Keep doing so at your own peril!
+/obj/item/catdetector/proc/deal_with_impatience(mob/user)
+	if(greedy_warning)
+		to_chat(user, "<span class='warning'><b>\The [src] will deal with your impatience momentarily...</b></span>")
+		if(iscarbon(user))
+			var/mob/living/carbon/greedy_carbon = user
+			greedy_arm = (greedy_carbon.held_items[RIGHT_HANDS] == src) ? greedy_carbon.get_bodypart(BODY_ZONE_R_ARM) : greedy_carbon.get_bodypart(BODY_ZONE_L_ARM)
+		greedy_mob_fallback = user // this provides a fallback if a noncarbon or armless person procs this, or if the chosen arm is destroyed before we slice it off
+	else
+		to_chat(user, "<span class='warning'>\The [src] is already processing a scan, please wait patiently.</span>")
+		greedy_warning = TRUE
+
+/// The scan is done, check to see if there's a greedy person who needs to be maimed, then report the results for if the target really WAS a cat
+/obj/item/catdetector/proc/report_results(atom/target)
+	if(greedy_arm?.owner) // cut off someone's arm!
+		loc.visible_message("<span class='warning'>[src] quickly displays a skull before continuing with its results...</span>", vision_distance=COMBAT_MESSAGE_RANGE)
+		greedy_arm.dismember()
+	else if(greedy_mob_fallback) // or, failing that, just mash 'em up
+		loc.visible_message("<span class='warning'>[src] quickly displays a skull before continuing with its results...</span>", vision_distance=COMBAT_MESSAGE_RANGE)
+		greedy_mob_fallback.adjustBruteLoss(50)
+		INVOKE_ASYNC(greedy_mob_fallback, /mob.proc/emote, "scream")
+		playsound(greedy_mob_fallback, 'sound/effects/dismember.ogg', 80, TRUE)
+
+	greedy_arm = null
+	greedy_mob_fallback = null
+
+	if(QDELETED(target))
+		audible_message("<span class='warning'>[src] falls silent, indicating that while the scanned target has ceased to exist, it was probably still a cat.</span>")
+		// inaudible_message, more like
+		return
+
+	loc.visible_message("<span class='notice'>[src] pings, indicating that [target] is a cat!</span>", blind_message="<span class='notice'>You hear a ping, likely meaning that [target] is a cat!</span>")
+	playsound(src, 'sound/machines/ping.ogg', 30, TRUE)
