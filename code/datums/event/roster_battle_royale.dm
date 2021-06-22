@@ -115,5 +115,8 @@
 	UnregisterSignal(loser_contestant, list(COMSIG_MOB_STATCHANGE, COMSIG_LIVING_DEATH, COMSIG_PARENT_QDELETING))
 	loser.dust()
 
+	if(COOLDOWN_FINISHED(src, battle_royale_voice_cd))
+		COOLDOWN_START(src, battle_royale_voice_cd, BATTLE_ROYALE_ELIMINATION_VOICE_DELAY)
+
 	if(remaining_contestants <= br_end_population)
 		end_battle_royale()
