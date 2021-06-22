@@ -217,7 +217,6 @@
 	shockcd = TRUE
 	addtimer(CALLBACK(src, .proc/cooldown), 5)
 
-
 /obj/structure/holosign/barrier/ctf
 	name = "Spawn protection"
 	desc = "Stay outta the enemy spawn!"
