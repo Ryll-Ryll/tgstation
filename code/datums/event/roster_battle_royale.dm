@@ -62,6 +62,8 @@
 /// Officially ends the battle royale nightmare
 /datum/roster/proc/end_battle_royale(mob/user)
 	battle_royale_active = FALSE
+	priority_announce("Battle Royale complete!")
+	
 	if(user)
 		message_admins("[key_name_admin(user)] has ended the BATTLE ROYALE mode.")
 		log_game("[key_name_admin(user)] has ended the BATTLE ROYALE mode.")
@@ -115,8 +117,30 @@
 	UnregisterSignal(loser_contestant, list(COMSIG_MOB_STATCHANGE, COMSIG_LIVING_DEATH, COMSIG_PARENT_QDELETING))
 	loser.dust()
 
+	if(remaining_contestants % 5 == 0)
+		for(var/mob/M in GLOB.player_list)
+			to_chat(M, "[span_minorannounce("<font color = red>Battle Royale Update</font color><BR>[remaining_contestants] contestants remaining!")]<BR>")
+
 	if(COOLDOWN_FINISHED(src, battle_royale_voice_cd))
 		COOLDOWN_START(src, battle_royale_voice_cd, BATTLE_ROYALE_ELIMINATION_VOICE_DELAY)
+
+		var/vol = 70
+		var/sound/admin_sound = new()
+		admin_sound.file = pick(br_elimination_voice_files)
+		admin_sound.priority = 250
+		admin_sound.channel = CHANNEL_ADMIN
+		admin_sound.frequency = 1
+		admin_sound.wait = 1
+		admin_sound.repeat = FALSE
+		admin_sound.status = SOUND_STREAM
+		admin_sound.volume = vol
+
+		for(var/mob/M in GLOB.player_list)
+			if(!(M.client?.prefs.toggles & SOUND_MIDI))
+				continue
+			admin_sound.volume = vol * M.client.admin_music_volume
+			SEND_SOUND(M, admin_sound)
+			admin_sound.volume = vol
 
 	if(remaining_contestants <= br_end_population)
 		end_battle_royale()

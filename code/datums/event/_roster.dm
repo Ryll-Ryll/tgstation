@@ -38,6 +38,19 @@ GLOBAL_DATUM_INIT(global_roster, /datum/roster, new)
 	var/br_end_population = 16
 	/// Are we in BR mode?
 	var/battle_royale_active = FALSE
+	/// The cooldown for battle royale elim voice lines
+	COOLDOWN_DECLARE(battle_royale_voice_cd)
+	/// The sound files we choose from when people get elim'd
+	var/static/list/br_elimination_voice_files = list('sound/battle_royale/eliminated (1).ogg',\
+		'sound/battle_royale/eliminated (2).ogg',\
+		'sound/battle_royale/eliminated (3).ogg',\
+		'sound/battle_royale/eliminated (4).ogg',\
+		'sound/battle_royale/eliminated (5).ogg',\
+		'sound/battle_royale/eliminated (6).ogg',\
+		'sound/battle_royale/eliminated (7).ogg',\
+		'sound/battle_royale/eliminated (8).ogg',\
+		'sound/battle_royale/eliminated (9).ogg'
+		)
 
 	// antag hud stuff stolen wholesale from the arena computer so they now live here
 	/// List of team ids
