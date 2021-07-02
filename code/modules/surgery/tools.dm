@@ -197,6 +197,7 @@
 /obj/item/circular_saw/Initialize()
 	. = ..()
 	AddComponent(/datum/component/butchering, 40 * toolspeed, 100, 5, 'sound/weapons/circsawhit.ogg') //saws are very accurate and fast at butchering
+	AddComponent(/datum/component/gnashing) //saws are very accurate and fast at butchering
 
 /obj/item/circular_saw/augment
 	desc = "A small but very fast spinning saw. It rips and tears until it is done."
