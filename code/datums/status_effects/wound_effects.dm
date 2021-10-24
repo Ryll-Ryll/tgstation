@@ -224,3 +224,6 @@
 	id = "thirddeg"
 /datum/status_effect/wound/burn/critical
 	id = "fourthdeg"
+// stubbed toe
+/datum/status_effect/wound/special/stubbed_toe
+	id = "stubtoe"
