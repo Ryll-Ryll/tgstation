@@ -205,7 +205,7 @@ GLOBAL_VAR_INIT(cryo_overlay_cover_off, mutable_appearance('icons/obj/cryogenics
 		return
 	. += (on && is_operational) ? GLOB.cryo_overlay_cover_on : GLOB.cryo_overlay_cover_off
 
-/obj/machinery/atmospherics/components/unary/cryo_cell/nap_violation(mob/violator)
+/obj/machinery/atmospherics/components/unary/cryo_cell/nap_violation(mob/living/deadbeat)
 	open_machine()
 
 

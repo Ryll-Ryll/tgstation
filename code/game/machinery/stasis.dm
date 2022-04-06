@@ -12,7 +12,7 @@
 	circuit = /obj/item/circuitboard/machine/stasis
 	idle_power_usage = 40
 	active_power_usage = 340
-	fair_market_price = 10
+	ancap_charge_rate  = 10
 	payment_department = ACCOUNT_MED
 	var/stasis_enabled = TRUE
 	var/last_stasis_sound = FALSE
@@ -150,10 +150,7 @@
 	. = ..()
 	return default_deconstruction_crowbar(I) || .
 
-/obj/machinery/stasis/nap_violation(mob/violator)
-	unbuckle_mob(violator, TRUE)
-
-/obj/machinery/stasis/check_nap_violation(mob/living/customer)
-	unbuckle_mob(violator, TRUE)
+/obj/machinery/stasis/nap_violation(mob/living/deadbeat)
+	unbuckle_mob(deadbeat, TRUE)
 
 #undef STASIS_TOGGLE_COOLDOWN

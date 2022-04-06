@@ -10,6 +10,7 @@
 	damage_coeff = list(BRUTE = 0.5, BURN = 0.7, TOX = 0, CLONE = 0, STAMINA = 0, OXY = 0)
 	pass_flags = PASSMOB | PASSFLAPS
 	combat_mode = TRUE
+	payment_department = ACCOUNT_SEC
 
 	maints_access_required = list(ACCESS_SECURITY)
 	radio_key = /obj/item/encryptionkey/secbot //AI Priv + Security
@@ -47,8 +48,9 @@
 	var/fair_market_price_detain = 5
 	///Force of the harmbaton used on them
 	var/weapon_force = 20
-	///The department the secbot will deposit collected money into
-	var/payment_department = ACCOUNT_SEC
+	///If force_ancap_mode is set to ANCAP_LEVEL_OVERDRIVE, shoot the target with one of these in addition to stunning them
+	var/fair_market_jacket = /obj/item/ammo_casing/shotgun/buckshot
+
 
 /mob/living/simple_animal/bot/secbot/beepsky
 	name = "Commander Beep O'sky"
@@ -257,8 +259,9 @@
 		return ..()
 	var/mob/living/carbon/carbon_target = attack_target
 	if(!carbon_target.IsParalyzed() || !(security_mode_flags & SECBOT_HANDCUFF_TARGET))
-		if(!check_nap_violations())
-			stun_attack(attack_target, TRUE)
+		var/roughness_tax = (security_mode_flags & SECBOT_HANDCUFF_TARGET ? fair_market_price_detain : fair_market_price_arrest)
+		if(check_nap_violations(carbon_target, roughness_tax, silent_success = FALSE))
+			return
 		else
 			stun_attack(attack_target)
 	else if(carbon_target.canBeHandcuffed() && !carbon_target.handcuffed)
@@ -304,11 +307,11 @@
 		weapon.attack(current_target, src)
 	if(ishuman(current_target))
 		current_target.stuttering = 5
-		current_target.Paralyze(100)
+		current_target.Paralyze(10 SECONDS)
 		var/mob/living/carbon/human/human_target = current_target
 		threat = human_target.assess_threat(judgement_criteria, weaponcheck = CALLBACK(src, .proc/check_for_weapons))
 	else
-		current_target.Paralyze(100)
+		current_target.Paralyze(10 SECONDS)
 		current_target.stuttering = 5
 		threat = current_target.assess_threat(judgement_criteria, weaponcheck = CALLBACK(src, .proc/check_for_weapons))
 
@@ -346,8 +349,10 @@
 				back_to_idle()
 				return
 			if(Adjacent(target) && isturf(target.loc)) // if right next to perp
-				if(!check_nap_violations())
-					stun_attack(target, TRUE)
+				var/roughness_tax = (security_mode_flags & SECBOT_HANDCUFF_TARGET ? fair_market_price_detain : fair_market_price_arrest)
+				if(check_nap_violations(target, roughness_tax, silent_success = FALSE))
+					set_anchored(TRUE)
+					return
 				else
 					stun_attack(target)
 
@@ -388,8 +393,8 @@
 				return
 
 			if(target.handcuffed) //no target or target cuffed? back to idle.
-				if(!check_nap_violations())
-					stun_attack(target, TRUE)
+				var/roughness_tax = (security_mode_flags & SECBOT_HANDCUFF_TARGET ? fair_market_price_detain : fair_market_price_arrest)
+				if(check_nap_violations(target, roughness_tax, silent_success = FALSE))
 					return
 				back_to_idle()
 				return
@@ -515,48 +520,14 @@
 			return
 		knockOver(C)
 
-/// Returns false if the current target is unable to pay the fair_market_price for being arrested/detained
-/mob/living/simple_animal/bot/secbot/proc/credit_check(mob/living/customer)
-	if(!SSeconomy.full_ancap && !force_ancap_mode)
-		return TRUE
-	if(!target)
-		return TRUE
-	if(!ishuman(target))
-		return TRUE
-	var/mob/living/carbon/human/human_target = target
-	var/obj/item/card/id/target_id = human_target.get_idcard()
-	if(!target_id)
-		say("Suspect NAP Violation: No ID card found.")
-		nap_violation(target)
-		return FALSE
-	var/datum/bank_account/insurance = target_id.registered_account
-	if(!insurance)
-		say("Suspect NAP Violation: No bank account found.")
-		nap_violation(target)
-		return FALSE
-	var/fair_market_price = (security_mode_flags & SECBOT_HANDCUFF_TARGET ? fair_market_price_detain : fair_market_price_arrest)
-	if(!insurance.adjust_money(-fair_market_price))
-		say("Suspect NAP Violation: Unable to pay.")
-		nap_violation(target)
-		return FALSE
-	var/datum/bank_account/beepsky_department_account = SSeconomy.get_dep_account(payment_department)
-	say("Thank you for your compliance. Your account been charged [fair_market_price] credits.")
-	if(beepsky_department_account)
-		beepsky_department_account.adjust_money(fair_market_price)
-		return TRUE
-
-/// Does nothing
-/mob/living/simple_animal/bot/secbot/proc/check_nap_violations(mob/living/customer, price)
-	if(!SSeconomy.full_ancap && !force_ancap_mode)
-		return FALSE
-	if(!istype(customer))
-		return FALSE
-	if(!credit_check(customer, price))
-		nap_violation(customer)
-		return TRUE
-
-
-
-/// Does nothing
-/mob/living/simple_animal/bot/secbot/proc/nap_violation(mob/violator)
-	return
+/mob/living/simple_animal/bot/secbot/nap_violation(mob/living/deadbeat)
+	switch(force_ancap_mode)
+		if(ANCAP_LEVEL_ENABLED)
+			stun_attack(deadbeat, TRUE)
+		if(ANCAP_LEVEL_OVERDRIVE)
+			stun_attack(deadbeat, TRUE)
+			var/turf/our_turf = get_turf(src)
+			var/obj/item/ammo_casing/justice = new fair_market_jacket(our_turf)
+			visible_message("[src] unloads [justice] on [deadbeat], for [deadbeat.p_their()] crimes against the economy!")
+			justice.fire_casing(deadbeat, src)
+			justice.forceMove(our_turf)

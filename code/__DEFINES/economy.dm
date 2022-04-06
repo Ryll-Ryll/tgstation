@@ -61,3 +61,10 @@
 #define PAYMENT_CLINICAL "clinical"
 #define PAYMENT_FRIENDLY "friendly"
 #define PAYMENT_ANGRY "angry"
+
+/// We use no ancap behavior
+#define ANCAP_LEVEL_DISABLED 0
+/// We deny service or treat anyone who can't pay for services poorly, for sources that support it
+#define ANCAP_LEVEL_ENABLED 1
+/// We abuse the shit out of anyone who can't pay for services, for sources that support it
+#define ANCAP_LEVEL_OVERDRIVE 2

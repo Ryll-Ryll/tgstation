@@ -101,6 +101,8 @@
 	interaction_flags_atom = INTERACT_ATOM_ATTACK_HAND | INTERACT_ATOM_UI_INTERACT
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 
+	payment_department = ACCOUNT_ENG
+
 	var/machine_stat = NONE
 	var/use_power = IDLE_POWER_USE
 		//0 = dont use power
@@ -133,11 +135,6 @@
 	var/interaction_flags_machine = INTERACT_MACHINE_WIRES_IF_OPEN | INTERACT_MACHINE_ALLOW_SILICON | INTERACT_MACHINE_OPEN_SILICON | INTERACT_MACHINE_SET_MACHINE
 	/// If this machine is set to ancap mode, this is how much the special interaction costs
 	var/ancap_charge_rate = 69
-	///
-	var/consumer_title = "Customer"
-	var/payment_department = ACCOUNT_ENG
-	/// If TRUE, this machine will act like ancap mode is enabled, even if it isn't globally
-	var/force_ancap_mode = FALSE
 
 	// For storing and overriding ui id
 	var/tgui_id // ID of TGUI interface
@@ -553,56 +550,6 @@
 
 	return TRUE // If we passed all of those checks, woohoo! We can interact with this machine.
 
-/// For ancap features, checks if the customer has an ID with enough credits to cover the cost. If no, returns TRUE
-/obj/machinery/proc/credit_check(mob/living/customer, fair_market_price)
-	if(!istype(customer))
-		return TRUE
-
-	var/obj/item/card/id/customer_id = customer.get_idcard(TRUE)
-	if(!customer_id)
-		say("[consumer_title] NAP Violation: No ID card found.")
-		return FALSE
-	var/datum/bank_account/insurance = customer_id.registered_account
-	if(!insurance)
-		say("[consumer_title] NAP Violation: No bank account found.")
-		return FALSE
-	if(!insurance.has_money(fair_market_price))
-		say("[consumer_title] NAP Violation: Unable to pay.")
-		return FALSE
-
-	return TRUE
-
-/// When someone fails an ancap NAP check, deal the punishment here
-/obj/machinery/proc/nap_violation(mob/living/deadbeat)
-	return FALSE
-
-/**
- * Attempts to make the target mob pay for whatever special interaction is attached to this machinery, and punish them if they can't
- *
- * Returns TRUE if we have ancap enabled and the target fails the [credit check][/obj/machinery/proc/credit_check], then runs [/obj/machinery/proc/nap_violation]
- *
- * Arguments:
- * * customer - Who we're trying to charge
- * * fair_market_price - How much we're charging
- */
-/obj/machinery/proc/check_nap_violations(mob/living/customer, fair_market_price)
-	if(!SSeconomy.full_ancap && !force_ancap_mode)
-		return FALSE
-	if(!istype(customer))
-		return FALSE
-
-	var/datum/bank_account/department_account = SSeconomy.get_dep_account(payment_department)
-	if(!department_account)
-		CRASH("Tried checking NAP payments on a machine with no payable department")
-
-	if(!credit_check(customer, fair_market_price))
-		nap_violation(customer)
-		return TRUE
-
-	var/obj/item/card/id/customer_id = customer.get_idcard(TRUE)
-	var/datum/bank_account/insurance = customer_id?.registered_account
-	insurance.adjust_money(-fair_market_price))
-	department_account.adjust_money(fair_market_price)
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 

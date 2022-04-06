@@ -163,7 +163,7 @@
 	if(occupant)
 		check_nap_violations(occupant, ancap_charge_rate)
 
-/obj/machinery/sleeper/nap_violation(mob/violator)
+/obj/machinery/sleeper/nap_violation(mob/living/deadbeat)
 	open_machine()
 
 /obj/machinery/sleeper/ui_data()
