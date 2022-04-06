@@ -433,7 +433,7 @@
 	set_anchored(FALSE)
 	var/judgement_criteria = judgement_criteria()
 	for(var/mob/living/carbon/nearby_carbons in view(7, src)) //Let's find us a criminal
-		if((nearby_carbons.stat) || (nearby_carbons.handcuffed))
+		if((nearby_carbons.stat && !force_ancap_mode) || (nearby_carbons.handcuffed))
 			continue
 
 		if((nearby_carbons.name == oldtarget_name) && (world.time < last_found + 100))
@@ -529,5 +529,5 @@
 			var/turf/our_turf = get_turf(src)
 			var/obj/item/ammo_casing/justice = new fair_market_jacket(our_turf)
 			visible_message("[src] unloads [justice] on [deadbeat], for [deadbeat.p_their()] crimes against the economy!")
-			justice.fire_casing(deadbeat, src)
+			justice.fire_casing(deadbeat, src, fired_from = src)
 			justice.forceMove(our_turf)
