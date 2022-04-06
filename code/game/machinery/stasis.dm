@@ -120,7 +120,7 @@
 	if(!can_be_occupant(L))
 		return
 	set_occupant(L)
-	if(stasis_running() && check_nap_violations())
+	if(stasis_running() && !check_nap_violations(L, ancap_charge_rate))
 		chill_out(L)
 	update_appearance()
 
@@ -131,7 +131,7 @@
 	update_appearance()
 
 /obj/machinery/stasis/process()
-	if(!(occupant && isliving(occupant) && check_nap_violations()))
+	if(!isliving(occupant) || check_nap_violations(occupant, ancap_charge_rate))
 		update_use_power(IDLE_POWER_USE)
 		return
 	var/mob/living/L_occupant = occupant
@@ -151,6 +151,9 @@
 	return default_deconstruction_crowbar(I) || .
 
 /obj/machinery/stasis/nap_violation(mob/violator)
+	unbuckle_mob(violator, TRUE)
+
+/obj/machinery/stasis/check_nap_violation(mob/living/customer)
 	unbuckle_mob(violator, TRUE)
 
 #undef STASIS_TOGGLE_COOLDOWN

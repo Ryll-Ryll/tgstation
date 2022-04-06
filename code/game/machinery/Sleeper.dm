@@ -29,7 +29,7 @@
 	var/scrambled_chems = FALSE //Are chem buttons scrambled? used as a warning
 	var/enter_message = "<span class='notice'><b>You feel cool air surround you. You go numb as your senses turn inward.</b></span>"
 	payment_department = ACCOUNT_MED
-	fair_market_price = 5
+	ancap_charge_rate = 5
 
 /obj/machinery/sleeper/Initialize(mapload)
 	. = ..()
@@ -160,7 +160,8 @@
 
 /obj/machinery/sleeper/process()
 	..()
-	check_nap_violations()
+	if(occupant)
+		check_nap_violations(occupant, ancap_charge_rate)
 
 /obj/machinery/sleeper/nap_violation(mob/violator)
 	open_machine()
@@ -215,7 +216,8 @@
 		return
 
 	var/mob/living/mob_occupant = occupant
-	check_nap_violations()
+	if(istype(mob_occupant))
+		check_nap_violations(mob_occupant, ancap_charge_rate)
 	switch(action)
 		if("door")
 			if(state_open)

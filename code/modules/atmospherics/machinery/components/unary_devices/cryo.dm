@@ -103,7 +103,7 @@
 	var/message_cooldown
 	///Cryo will continue to treat people with 0 damage but existing wounds, but will sound off when damage healing is done in case doctors want to directly treat the wounds instead
 	var/treating_wounds = FALSE
-	fair_market_price = 10
+	ancap_charge_rate = 10
 	payment_department = ACCOUNT_MED
 
 
@@ -236,7 +236,7 @@ GLOBAL_VAR_INIT(cryo_overlay_cover_off, mutable_appearance('icons/obj/cryogenics
 	var/mob/living/mob_occupant = occupant
 	if(mob_occupant.on_fire)
 		mob_occupant.extinguish_mob()
-	if(!check_nap_violations())
+	if(check_nap_violations(mob_occupant, ancap_charge_rate))
 		return
 	if(mob_occupant.stat == DEAD) // We don't bother with dead people.
 		return

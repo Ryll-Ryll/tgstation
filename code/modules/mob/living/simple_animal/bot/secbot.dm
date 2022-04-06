@@ -516,8 +516,8 @@
 		knockOver(C)
 
 /// Returns false if the current target is unable to pay the fair_market_price for being arrested/detained
-/mob/living/simple_animal/bot/secbot/proc/check_nap_violations()
-	if(!SSeconomy.full_ancap)
+/mob/living/simple_animal/bot/secbot/proc/credit_check(mob/living/customer)
+	if(!SSeconomy.full_ancap && !force_ancap_mode)
 		return TRUE
 	if(!target)
 		return TRUE
@@ -544,6 +544,18 @@
 	if(beepsky_department_account)
 		beepsky_department_account.adjust_money(fair_market_price)
 		return TRUE
+
+/// Does nothing
+/mob/living/simple_animal/bot/secbot/proc/check_nap_violations(mob/living/customer, price)
+	if(!SSeconomy.full_ancap && !force_ancap_mode)
+		return FALSE
+	if(!istype(customer))
+		return FALSE
+	if(!credit_check(customer, price))
+		nap_violation(customer)
+		return TRUE
+
+
 
 /// Does nothing
 /mob/living/simple_animal/bot/secbot/proc/nap_violation(mob/violator)
