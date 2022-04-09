@@ -46,8 +46,6 @@
 	var/fair_market_price_arrest = 25
 	///Charged each time the violator is stunned on detain
 	var/fair_market_price_detain = 5
-	///Force of the harmbaton used on them
-	var/weapon_force = 20
 	///If force_ancap_mode is set to ANCAP_LEVEL_OVERDRIVE, shoot the target with one of these in addition to stunning them
 	var/fair_market_jacket = /obj/item/ammo_casing/shotgun/buckshot
 
@@ -528,6 +526,6 @@
 			stun_attack(deadbeat, TRUE)
 			var/turf/our_turf = get_turf(src)
 			var/obj/item/ammo_casing/justice = new fair_market_jacket(our_turf)
-			visible_message("[src] unloads [justice] on [deadbeat], for [deadbeat.p_their()] crimes against the economy!")
+			deadbeat.visible_message(span_warning("[src] unloads [justice] on [deadbeat], for [deadbeat.p_their()] crimes against the economy!"), span_userdanger("[src] unloads [justice] on you for your crimes against the economy!"))
 			justice.fire_casing(deadbeat, src, fired_from = src)
 			justice.forceMove(our_turf)

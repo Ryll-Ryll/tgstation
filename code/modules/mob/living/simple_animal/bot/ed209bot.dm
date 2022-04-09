@@ -11,12 +11,13 @@
 
 	bot_type = ADVANCED_SEC_BOT
 	hackables = "combat inhibitors"
+	fair_market_jacket = /obj/projectile/bullet/a357 // For shooting the worst scumbags of all: the poor
 
 	var/lastfired = 0
 	var/shot_delay = 15
 	var/shoot_sound = 'sound/weapons/laser.ogg'
 	var/projectile = /obj/projectile/beam/disabler
-	var/fair_market_projectile = /obj/projectile/bullet/c38 // For shooting the worst scumbags of all: the poor
+
 
 /mob/living/simple_animal/bot/secbot/ed209/Initialize(mapload)
 	. = ..()
