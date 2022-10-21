@@ -46,11 +46,10 @@
 
 	//find where to run off to, regardless of whether we successfully grabbed our target
 	var/turf/planned_dropoff
-	var/list/turf/rim_turfs = shuffle(RIM_TURFS(10, 11, target))
+	var/list/turf/rim_turfs = get_turfs_bfs(get_turf(target), max_range = 12, min_range = 8)
 	for(var/turf/open/possible_dropoff in rim_turfs)
 		if(isgroundlessturf(possible_dropoff))
 			continue
-		get_path_to()
 
 		//barebones solution
 		var/invalid = FALSE
