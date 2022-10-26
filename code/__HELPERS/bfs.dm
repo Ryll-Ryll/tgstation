@@ -1,20 +1,12 @@
+/// stripped down copy of the path.dm one for expediency
 #define CAN_STEP(cur_turf, next) (next && !next.density)
+/// in the 2 item lists for storing nodes, this represents the turf
+#define BFS_TILE 1
+/// in the 2 item lists for storing nodes, this represents the number of jumps it took to get here
+#define BFS_JUMPS 2
 
-/// Will be replaced by a list(turf, jumps) tuple
-/datum/bfs_node
-	/// The turf this represents
-	var/turf/tile
-	/// How many steps it took to get here
-	var/jumps
-
-/datum/bfs_node/New(turf/our_tile, jumps_taken)
-	. = ..()
-	tile = our_tile
-	jumps = jumps_taken
-
-
-/proc/HeapStepsCompare(datum/bfs_node/a, datum/bfs_node/b)
-	return b.jumps - a.jumps
+/proc/HeapStepsCompare(list/a, list/b)
+	return b[BFS_JUMPS] - a[BFS_JUMPS]
 
 /**
  * Uses BFS to find all reachable tiles within max_range cardinal steps. To be replaced with a more efficient solution that doesn't create nodes for each tile
@@ -29,21 +21,22 @@
 	if(!istype(starting) || max_range < 1)
 		return
 
-	var/datum/bfs_node/starting_node = new(starting, 0)
-	var/datum/bfs_node/current
+	var/list/starting_tile = list(starting, 0)
+	var/list/current_tile
 
-	var/datum/heap/open = new /datum/heap(/proc/HeapStepsCompare)
-	open.insert(starting_node)
+	var/list/open = list()
+	open += list(starting_tile)
 	var/list/closed = list()
 
 	var/list/final_band
 	if(min_range)
 		final_band = list()
 
-	while(!open.is_empty())
-		current = open.pop()
-		var/turf/current_turf = current.tile
-		var/current_jumps = current.jumps
+	while(open.len)
+		current_tile = open[1]
+		open.Cut(1,2)
+		var/turf/current_turf = current_tile[BFS_TILE]
+		var/current_jumps = current_tile[BFS_JUMPS]
 		closed[current_turf] = current_jumps
 		if(min_range && current_jumps >= min_range)
 			final_band[current_turf] = current_jumps
@@ -51,32 +44,12 @@
 		if(current_jumps >= max_range)
 			continue
 
-/*
-		for(var/scan_direction in list(EAST, WEST, NORTH, SOUTH))
-			var/turf/check_turf = current_turf
-			var/turf/check_turf_next
-
-			var/next_jumps = current_jumps
-
-			for(var/iter_jumps in 1 to (max_range - current_jumps))
-				check_turf_next = get_step(check_turf, scan_direction)
-				next_jumps++
-				closed[check_turf] = next_jumps
-				if(!CAN_STEP(check_turf, check_turf_next) || (closed[check_turf_next] <= next_jumps))
-					break
-				var/datum/bfs_node/new_node = new(check_turf, next_jumps)
-				open.insert(new_node)
-				check_turf = check_turf_next
-*/
 		// check adj turfs
 		for(var/turf/iter_turf in get_adjacent_open_turfs(current_turf))
 			if(closed[iter_turf] || !CAN_STEP(current_turf, iter_turf))
 				continue
-			var/datum/bfs_node/new_node = new(iter_turf, current_jumps + 1)
-			open.insert(new_node)
-
+			open += list(list(iter_turf, current_jumps + 1))
 		// finished checking adjacent turfs
-
 
 	if(visualize)
 		for(var/turf/final_turfs in closed)
@@ -112,9 +85,9 @@
 	attack_verb_simple = list("prick", "absorb", "gore")
 	w_class = WEIGHT_CLASS_SMALL
 	resistance_flags = FLAMMABLE
-
+	/// how big an area to show
 	var/our_range = 7
-
+	/// cycles to show colors
 	var/visualize = 1
 
 
@@ -134,3 +107,5 @@
 	get_turfs_bfs(target_turf, our_range, 0, visualize)
 
 #undef CAN_STEP
+#undef BFS_TILE
+#undef BFS_STEPS

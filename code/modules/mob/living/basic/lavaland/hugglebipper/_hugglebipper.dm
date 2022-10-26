@@ -46,7 +46,7 @@
 
 	//find where to run off to, regardless of whether we successfully grabbed our target
 	var/turf/planned_dropoff
-	var/list/turf/rim_turfs = get_turfs_bfs(get_turf(target), max_range = 12, min_range = 8)
+	var/list/turf/rim_turfs = get_turfs_bfs(get_turf(target), max_range = 12, min_range = 9)
 	for(var/turf/open/possible_dropoff in rim_turfs)
 		if(isgroundlessturf(possible_dropoff))
 			continue
