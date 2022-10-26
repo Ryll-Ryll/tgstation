@@ -92,6 +92,8 @@
 			if(visualize)
 				final_turfs.maptext = "[final_jumps]"
 
+	to_chat(world, "Closed len: [closed.len]")
+
 	if(min_range)
 		return final_band
 	else
@@ -113,9 +115,8 @@
 
 	var/our_range = 7
 
-	var/visualize = FALSE
+	var/visualize = 1
 
-	var/vis_color = 1
 
 /obj/item/toy/bfs_test/attack_self(mob/user, modifiers)
 	our_range = input("What new range?", "New range") as null|num
@@ -126,9 +127,10 @@
 
 /obj/item/toy/bfs_test/afterattack(atom/target, mob/user, proximity_flag, click_parameters)
 	. = ..()
+	to_chat(world, "go")
 	if(visualize)
 		visualize = ((visualize + 1) % 3) + 1
 	var/turf/target_turf = get_turf(target)
-	get_turfs_bfs(target_turf, our_range, visualize)
+	get_turfs_bfs(target_turf, our_range, 0, visualize)
 
 #undef CAN_STEP

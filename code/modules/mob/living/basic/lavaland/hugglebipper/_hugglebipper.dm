@@ -66,6 +66,7 @@
 		planned_dropoff = possible_dropoff
 		break
 	if(planned_dropoff)
+		planned_dropoff.color = COLOR_RED
 		ai_controller?.blackboard[BB_HUGGLEBIPPER_DROPOFF] = WEAKREF(planned_dropoff)
 
 	//we no longer care who we are targetting so we really just want to go to dropoff
